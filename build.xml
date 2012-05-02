@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="create_run_jar" name="Create Runnable Jar for Project hadoopizer with libraries in sub-folder">
+    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
+    <!--ANT 1.7 is required                                        -->
+    <target name="create_run_jar">
+        <jar destfile="/udd/abretaud/hadoopizer_latest.jar">
+            <manifest>
+                <attribute name="Main-Class" value="org.genouest.hadoopizer.Hadoopizer"/>
+                <attribute name="Class-Path" value=". hadoopizer_latest_lib/hadoop-core-1.0.2.jar hadoopizer_latest_lib/commons-logging-1.1.1.jar hadoopizer_latest_lib/commons-configuration-1.6.jar hadoopizer_latest_lib/commons-lang-2.4.jar hadoopizer_latest_lib/jackson-core-asl-1.8.8.jar hadoopizer_latest_lib/jackson-mapper-asl-1.8.8.jar hadoopizer_latest_lib/commons-io-2.3.jar hadoopizer_latest_lib/common-codec.jar hadoopizer_latest_lib/common-compress.jar hadoopizer_latest_lib/commons-cli.jar"/>
+            </manifest>
+            <fileset dir="/udd/abretaud/workspace/hadoopizer/bin"/>
+        </jar>
+        <delete dir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <mkdir dir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <copy file="/udd/abretaud/workspace/hadoopizer/lib/hadoop-core-1.0.2.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <copy file="/udd/abretaud/workspace/hadoopizer/lib/commons-logging-1.1.1.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <copy file="/udd/abretaud/workspace/hadoopizer/lib/commons-configuration-1.6.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <copy file="/udd/abretaud/workspace/hadoopizer/lib/commons-lang-2.4.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <copy file="/udd/abretaud/workspace/hadoopizer/lib/jackson-core-asl-1.8.8.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <copy file="/udd/abretaud/workspace/hadoopizer/lib/jackson-mapper-asl-1.8.8.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <copy file="/udd/abretaud/workspace/hadoopizer/lib/commons-io-2.3.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <copy file="/udd/abretaud/workspace/hadoopizer/lib/common-codec.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <copy file="/udd/abretaud/workspace/hadoopizer/lib/common-compress.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <copy file="/udd/abretaud/workspace/hadoopizer/lib/commons-cli.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
+    </target>
+</project>

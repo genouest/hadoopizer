@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<job>
+    <command>
+        blastp -query ${q} -db ${db} -out ${res}
+    </command>
+    
+    <input id="q"><!-- only one allowed -->
+        <splitter>fasta</splitter>
+        <unzip>true/false</unzip> <!-- if true, will unzip the file after upload, but what if no upload? -->
+        
+        <!-- s3n, local, ... = only one url per input -->
+        <url>/local/foo/bar/myfile.fasta</url>
+        <url>hdfs://pouet/myfile.fasta</url>
+        <url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/myfile.fasta</url>
+        <url>http://example.org/myfile.fasta</url> <!-- need download or hadoop understands it? -->
+        <!-- any other protocol? -->
+    </input>
+
+    <input id="db">
+        <splitter>none</splitter><!-- means reference? or specific tag? -->
+        <unzip>true/false</unzip> <!-- if true, will unzip the file after upload, but what if no upload? -->
+    
+        <!-- s3n, local, ... = only one url per input -->
+        <url autocomplete="true">/local/foo/bar/myfile</url> <!-- 2 cases here: on nfs (need to be uploaded with -files option) or not (no need to upload) -->
+        <url>hdfs://pouet/myfile.fasta</url> <!-- is it possible as hadoop input? -->
+        <url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/myfile.fasta</url>
+        <url>http://example.org/myfile.fasta</url> <!-- need download+upload or hadoop understands it? -->
+        <!-- any other protocol? -->
+    </input>
+    
+    <output id="res"> <!-- multiple output is possible -->
+        <reducer>blast</reducer>
+        
+        <url>/local/foo/bar</url> <!-- how is it handled? -->
+        <url>hdfs://pouet/</url> <!-- how is it handled? -->
+        <url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/</url> <!-- how is it handled? -->
+        <!-- any other protocol? -->
+    </output>
+</job>

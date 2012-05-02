@@ -1,0 +1,171 @@
+package org.genouest.hadoopizer.mappers;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.UUID;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.genouest.hadoopizer.Hadoopizer;
+import org.genouest.hadoopizer.JobConfig;
+
+public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> { 
+
+	private JobConfig config;
+	private File inputFile;
+	private LongWritable firstKey;
+	private LongWritable lastKey;
+	private BufferedWriter writer;
+	
+	@Override
+	protected void setup(Context context) throws IOException, InterruptedException {
+		
+		Configuration conf = context.getConfiguration();
+		
+		// Load hadoopizer job config
+		String xmlConfig = conf.get("hadoopizer.job.config");
+		config = new JobConfig();
+		config.load(xmlConfig);
+
+		// Download static files
+		Path[] cacheFiles = DistributedCache.getLocalCacheFiles(conf);
+		if (null != cacheFiles && cacheFiles.length > 0) {
+			for (Path cachePath : cacheFiles) {
+				String id = cachePath.getParent().getName();
+
+				Hadoopizer.logger.info("Found the static input file '" + id + "' in the distributed cache: " + cachePath.toString());
+				
+				config.setStaticInputLocalPath(id, cachePath.toString());
+			}
+		}
+		
+		// TODO use Path.SEPARATOR instead of /
+		
+		// Write data chunk to a temporary input file
+		// This input file will be used in the command line launched in the cleanup step
+	    inputFile = createTempFile(new File(System.getProperty("java.io.tmpdir")), "input", ".chunk");
+	    writer = new BufferedWriter(new FileWriter(inputFile));
+		Hadoopizer.logger.info("Writing input chunk to '" + inputFile.getAbsolutePath());
+	    
+	    config.getSplittableInput().setLocalPath(inputFile.getAbsolutePath());
+	    
+
+	    
+	    
+	    
+	    
+	    
+	    File truc = new File(""); // The local work dir
+	    truc = truc.getAbsoluteFile();
+	    File[] machin = truc.listFiles();
+	    Hadoopizer.logger.info("work dir: " + truc.getAbsolutePath() + " is dir=" + truc.isDirectory());
+	    Hadoopizer.logger.info("(" + machin.length + " files)");
+	    for (int i = 0; i < machin.length; i++) {
+		    Hadoopizer.logger.info("containing file: " + machin[i]);
+		}
+	}
+
+	@Override
+	protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+		
+		//context.getCounter(GENERIC_COUNTER.INPUT_RECORDS).increment(1); // TODO this is useless -> find better use cases if needed
+		
+	    // TODO take care of the chunk size (chromosome/read)
+	    
+		if (firstKey == null)
+			firstKey = key;
+		lastKey = key;
+		
+        writer.write(value.toString(), 0, value.getLength());
+        writer.newLine();
+    }
+	
+	@Override
+	protected void cleanup(Context context) throws IOException, InterruptedException {
+		
+		// TODO maybe add a lock (optional?) to make sure only 1 command running at the same time on each node. This is done by eoulsan, but not necessarily useful.
+		
+		context.setStatus("Running command");
+		
+		// Preparing output file
+	    File outputFile = createTempFile(new File(System.getProperty("java.io.tmpdir")), "output", ".tmp"); // FIXME better tmp dir!
+	    config.getJobOutput().setLocalPath(outputFile.getAbsolutePath());
+		Hadoopizer.logger.info("Saving temporary results in: " + outputFile);
+	    
+		// Preparing the command line
+	    String command = config.getFinalCommand();
+		Hadoopizer.logger.info("Running command: " + command);
+	    
+		// Running the command line
+	    Process p = Runtime.getRuntime().exec(command);
+
+	    int result = p.waitFor();
+	    if (result != 0) {
+	    	throw new RuntimeException("Execution of command failed (returned " + result + ")");
+	    }
+
+	    // Process finished, get the output file content and add it to context
+		context.setStatus("Preparing command output for reduce task");
+		String outputContent = FileUtils.readFileToString(outputFile); // TODO handle binary results
+
+		Text key = new Text();
+		Text value = new Text();
+		key.set(firstKey + "-" + lastKey);
+		value.set(outputContent);
+		context.write(key, value);
+		
+		writer.close(); // TODO close file?
+
+		// Remove temporary output files
+		// TODO uncomment after debugging
+		/*if (!outputFile.delete())
+			Hadoopizer.logger.warning("Cannot delete output file: " + outputFile.getAbsolutePath());*/
+	}
+
+
+	// TODO externalize
+	/**
+	 * Create a new temporary file.
+	 * @param directory parent directory of the temporary file to create
+	 * @param prefix prefix of the temporary file
+	 * @param suffix suffix of the temporary file
+	 * @return the new temporary file
+	 * @throws IOException if there is an error creating the temporary directory
+	 */
+	public static File createTempFile(File directory, String prefix, String suffix) throws IOException {
+
+		if (directory == null)
+			throw new IOException("Parent directory is null");
+
+		if (prefix == null)
+			prefix = "";
+
+		if (suffix == null)
+			suffix = "";
+
+		File tempFile;
+
+		final int maxAttempts = 9;
+		int attemptCount = 0;
+		do {
+			attemptCount++;
+			if (attemptCount > maxAttempts)
+				throw new IOException("Failed to create a unique temporary directory after " + maxAttempts + " attempts.");
+
+			final String filename = prefix + UUID.randomUUID().toString() + suffix;
+			tempFile = new File(directory, filename);
+		} while (tempFile.exists());
+
+		if (!tempFile.createNewFile())
+			throw new IOException("Failed to create temp file " + tempFile.getAbsolutePath());
+
+		return tempFile;
+	}
+}

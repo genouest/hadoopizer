@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<job>
+    <command>
+        bowtie -m 1 --best --strata -S ${genome} ${reads} > ${mapped}
+    </command>
+    
+    <input id="reads">
+        <splitter>fastq</splitter>
+        <url>/omaha-beach/hadoopizer/K9_sequence.fastq</url>
+    </input>
+
+    <input id="genome">
+        <splitter>none</splitter>
+    
+        <url autocomplete="true">/omaha-beach/hadoopizer/aphid_genome/assembly2_scaffolds_DG</url>
+    </input>
+    
+    <output id="mapped">
+        <reducer>sam</reducer>
+        
+        <url>/omaha-beach/hadoopizer/output</url>
+    </output>
+</job>
