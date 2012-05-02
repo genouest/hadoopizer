@@ -115,7 +115,7 @@ public class Hadoopizer {
 	    // Add static input files to distributed cache
 	    HashSet<JobInput> inputs = config.getStaticInputs();
 	    for (JobInput jobInput : inputs) {
-	    	Path hdfsBasePath = new Path("hdfs://192.168.2.27/data/tmp/" + jobInput.getId() + "/"); // FIXME make it configurable/variable somehow
+	    	Path hdfsBasePath = new Path("hdfs://192.168.2.27/data/tmp/" + jobInput.getId() + Path.SEPARATOR); // FIXME make it configurable/variable somehow
 	    	FileSystem fs = hdfsBasePath.getFileSystem(jobConf);
 	    	
 	    	// TODO distributed cache can also be used to distribute software
@@ -131,7 +131,7 @@ public class Hadoopizer {
 	    			
 	    			// Add a fragment to the uri: hadoop will automatically create a symlink in the work dir pointing to this file
 	    			// Don't add the fragment to hdfsPath because it would be encoded in a strange way
-	    			URI hdfsUri = URI.create(hdfsPath.toString() + "#static_data" + Path.SEPARATOR + jobInput.getId() + Path.SEPARATOR + localPath.getName()); // FIXME choose a better fragment (beware of name collisions)
+	    			URI hdfsUri = URI.create(hdfsPath.toString() + "#static_data__" + jobInput.getId() + "__" + localPath.getName()); // FIXME choose a better fragment (beware of name collisions)
 	    			DistributedCache.addCacheFile(hdfsUri, jobConf);
 				}
 	    	}
@@ -144,7 +144,7 @@ public class Hadoopizer {
 	    		
     			// Add a fragment to the uri: hadoop will automatically create a symlink in the work dir pointing to this file
     			// Don't add the fragment to hdfsPath because it would be encoded in a strange way
-    			URI hdfsUri = URI.create(hdfsPath.toString() + "#" + localPath.getName()); // FIXME choose a better fragment (beware of name collisions)
+    			URI hdfsUri = URI.create(hdfsPath.toString() + "#static_data__" + jobInput.getId() + "__" + localPath.getName()); // FIXME choose a better fragment (beware of name collisions)
     			DistributedCache.addCacheFile(hdfsUri, jobConf);
 	    	}
 		}

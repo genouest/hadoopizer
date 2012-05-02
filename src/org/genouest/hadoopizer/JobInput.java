@@ -97,7 +97,7 @@ public class JobInput {
 		if (isAutoComplete()) {
 			Path local = new Path(localPath);
 			Path source = new Path(url);
-			this.localPath = local.getParent().toString() + "/" + source.getName(); // FIXME all the files are separated in the cache
+			this.localPath = local.getParent().toString() + Path.SEPARATOR + source.getName();
 		}
 		else
 			this.localPath = localPath;

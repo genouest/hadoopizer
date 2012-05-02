@@ -5,11 +5,11 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.filecache.DistributedCache;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -35,15 +35,23 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
 		config.load(xmlConfig);
 
 		// Download static files
-		Path[] cacheFiles = DistributedCache.getLocalCacheFiles(conf);
-		if (null != cacheFiles && cacheFiles.length > 0) {
-			for (Path cachePath : cacheFiles) {
-				String id = cachePath.getParent().getName();
+	    File workDir = new File(""); // The local work dir
+	    workDir = workDir.getAbsoluteFile();
+	    File[] workFiles = workDir.listFiles();
+	    Hadoopizer.logger.info("Looking for static input files in work dir: " + workDir.getAbsolutePath());
+	    Pattern p = Pattern.compile("static_data__(.*)__(.*)"); // FIXME bouh, hard coded
+	    Matcher m;
+	    String fileId;
+	    for (int i = 0; i < workFiles.length; i++) {
+	    	m = p.matcher(workFiles[i].getName());
+	    			
+	    	if (m.find()) {
+				fileId = m.group(0);
 
-				Hadoopizer.logger.info("Found the static input file '" + id + "' in the distributed cache: " + cachePath.toString());
+				Hadoopizer.logger.info("Found the static input file '" + fileId + "' in the distributed cache: " + workFiles[i].toString());
 				
-				config.setStaticInputLocalPath(id, cachePath.toString());
-			}
+				config.setStaticInputLocalPath(fileId, workFiles[i].toString());
+	    	}
 		}
 		
 		// TODO use Path.SEPARATOR instead of /
@@ -55,21 +63,6 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
 		Hadoopizer.logger.info("Writing input chunk to '" + inputFile.getAbsolutePath());
 	    
 	    config.getSplittableInput().setLocalPath(inputFile.getAbsolutePath());
-	    
-
-	    
-	    
-	    
-	    
-	    
-	    File truc = new File(""); // The local work dir
-	    truc = truc.getAbsoluteFile();
-	    File[] machin = truc.listFiles();
-	    Hadoopizer.logger.info("work dir: " + truc.getAbsolutePath() + " is dir=" + truc.isDirectory());
-	    Hadoopizer.logger.info("(" + machin.length + " files)");
-	    for (int i = 0; i < machin.length; i++) {
-		    Hadoopizer.logger.info("containing file: " + machin[i]);
-		}
 	}
 
 	@Override
