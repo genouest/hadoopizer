@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <job>
     <command>
-        bowtie -m 1 --best --strata -S ${genome} ${reads} > ${mapped}
+        bowtie -m 1  --chunkmbs 128 --best --strata -S ${genome} ${reads} > ${mapped}
     </command>
     
     <input id="reads">
