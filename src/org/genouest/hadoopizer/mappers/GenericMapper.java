@@ -39,22 +39,19 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
 	    workDir = workDir.getAbsoluteFile();
 	    File[] workFiles = workDir.listFiles();
 	    Hadoopizer.logger.info("Looking for static input files in work dir: " + workDir.getAbsolutePath());
-	    Pattern p = Pattern.compile("static_data__(.*)__(.*)"); // FIXME bouh, hard coded
+	    Pattern p = Pattern.compile("static_data__(.*)__.*"); // FIXME bouh, hard coded
 	    Matcher m;
 	    String fileId;
 	    for (int i = 0; i < workFiles.length; i++) {
 	    	m = p.matcher(workFiles[i].getName());
-	    			
-	    	if (m.find()) {
-				fileId = m.group(0);
 
-				Hadoopizer.logger.info("Found the static input file '" + fileId + "' in the distributed cache: " + workFiles[i].toString());
-				
-				config.setStaticInputLocalPath(fileId, workFiles[i].toString());
+	    	if (m.matches()) {
+	    		fileId = m.group(1);
+	    		Hadoopizer.logger.info("Found the static input file '" + fileId + "' in the distributed cache: " + workFiles[i].toString());
+
+	    		config.setStaticInputLocalPath(fileId, workFiles[i].toString());
 	    	}
 		}
-		
-		// TODO use Path.SEPARATOR instead of /
 		
 		// Write data chunk to a temporary input file
 		// This input file will be used in the command line launched in the cleanup step

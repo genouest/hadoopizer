@@ -9,7 +9,7 @@ import org.apache.hadoop.fs.Path;
 public class JobInput {
 
 	private String id;
-	private URI url; // TODO replace
+	private URI url;
 	private String splitter; // TODO replace with splitter instance?
 	private String localPath;
 	private boolean autoComplete = false;
