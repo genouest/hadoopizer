@@ -95,9 +95,14 @@ public class JobInput {
      */
     public void setLocalPath(String localPath) {
         if (isAutoComplete()) {
+            // In the config, the url looks like: /the/local/path/filenameprefix
+            // We receive something like: /some/path/static_input__someid__filenameprefix.txt
+            // We want to keep: /some/path/static_input__someid__filenameprefix
             Path local = new Path(localPath);
             Path source = new Path(url);
-            this.localPath = local.getParent().toString() + Path.SEPARATOR + source.getName();
+            int posMiddle = local.getName().lastIndexOf(source.getName());
+            String prefix = local.getName().substring(0, posMiddle);
+            this.localPath = local.getParent().toString() + Path.SEPARATOR + prefix + source.getName();
         }
         else
             this.localPath = localPath;

@@ -281,19 +281,19 @@ public class JobConfig {
         if (splittableInput.getLocalPath().isEmpty()) // FIXME potential nullpointerexception
             throw new RuntimeException("Unable to generate command line: the splittable input local path is empty.");
 
-        finalCommand = finalCommand.replaceFirst("\\$\\{" + splittableInput.getId() + "\\}", splittableInput.getLocalPath());
+        finalCommand = finalCommand.replaceAll("\\$\\{" + splittableInput.getId() + "\\}", splittableInput.getLocalPath()); // FIXME beware of special chars ($ etc) in replacement string
 
         for (JobInput in : staticInputs) {
             if (in.getLocalPath().isEmpty()) // FIXME potential nullpointerexception
                 throw new RuntimeException("Unable to generate command line: the '" + in.getId() + "' input local path is empty.");
 
-            finalCommand = finalCommand.replaceFirst("\\$\\{" + in.getId() + "\\}", in.getLocalPath());
+            finalCommand = finalCommand.replaceAll("\\$\\{" + in.getId() + "\\}", in.getLocalPath());
         }
 
         if (jobOutput.getLocalPath().isEmpty()) // FIXME handle other protocols // FIXME potential nullpointerexception
             throw new RuntimeException("Unable to generate command line: the '" + jobOutput.getId() + "' output local path is empty.");
 
-        finalCommand = finalCommand.replaceFirst("\\$\\{" + jobOutput.getId() + "\\}", jobOutput.getLocalPath());
+        finalCommand = finalCommand.replaceAll("\\$\\{" + jobOutput.getId() + "\\}", jobOutput.getLocalPath());
 
         return finalCommand;
     }
