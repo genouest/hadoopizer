@@ -1,9 +1,14 @@
 package org.genouest.hadoopizer.mappers;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -92,10 +97,40 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
         // Preparing the command line
         String command = config.getFinalCommand();
         Hadoopizer.logger.info("Running command: " + command);
+        
+        // java.lang.Process only works with 'simple' command lines (no redirections, ...)
+        // Write the command line to a temp shell script
+        File cmdFile = createTempFile(new File(System.getProperty("java.io.tmpdir")), "script", ".sh"); // FIXME better tmp dir!
+        cmdFile.setExecutable(true);
+        FileOutputStream fos = new FileOutputStream(cmdFile);
+        DataOutputStream dos = new DataOutputStream(fos);
+        dos.writeChars("#!/bin/bash\n"); // FIXME dependency on bash
+        dos.writeChars(command);
+        dos.flush();
+        dos.close();
+        fos.close();
 
         // Running the command line
-        Process p = Runtime.getRuntime().exec(command);
+        Process p = Runtime.getRuntime().exec(cmdFile.getAbsolutePath());
+        InputStream stdout = p.getInputStream();
+        InputStream stderr = p.getErrorStream();
+        
+        // print stdout
+        BufferedReader outReader = new BufferedReader (new InputStreamReader(stdout));
+        String outLine;
+        while ((outLine = outReader.readLine ()) != null) {
+            Hadoopizer.logger.info("[stdout] " + outLine);
+        }
+        outReader.close();
 
+        // print stderr
+        outReader = new BufferedReader (new InputStreamReader(stderr));
+        while ((outLine = outReader.readLine ()) != null) {
+            Hadoopizer.logger.info("[stderr] " + outLine);
+        }
+        outReader.close();
+
+        // Waiting for the command line completion
         int result = p.waitFor();
         if (result != 0) {
             throw new RuntimeException("Execution of command failed (returned " + result + ")");
