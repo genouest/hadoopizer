@@ -2,9 +2,7 @@ package org.genouest.hadoopizer.mappers;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,6 +83,9 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
 
+        writer.flush();
+        writer.close();
+        
         // TODO maybe add a lock (optional?) to make sure only 1 command running at the same time on each node. This is done by eoulsan, but not necessarily useful.
 
         context.setStatus("Running command");
@@ -102,13 +103,15 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
         // Write the command line to a temp shell script
         File cmdFile = createTempFile(new File(System.getProperty("java.io.tmpdir")), "script", ".sh"); // FIXME better tmp dir!
         cmdFile.setExecutable(true);
-        FileOutputStream fos = new FileOutputStream(cmdFile);
-        DataOutputStream dos = new DataOutputStream(fos);
-        dos.writeChars("#!/bin/bash\n"); // FIXME dependency on bash
-        dos.writeChars(command);
-        dos.flush();
-        dos.close();
-        fos.close();
+        FileWriter fw = new FileWriter(cmdFile);
+        BufferedWriter cmdWriter = new BufferedWriter(fw);
+        cmdWriter.write("#!/bin/bash"); // FIXME dependency on bash
+        cmdWriter.newLine();
+        cmdWriter.write(command);
+        cmdWriter.newLine();
+        cmdWriter.write("cat "+cmdFile.getAbsolutePath()); // FIXME debug
+        cmdWriter.flush();
+        cmdWriter.close();
 
         // Running the command line
         Process p = Runtime.getRuntime().exec(cmdFile.getAbsolutePath());
@@ -139,6 +142,7 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
         // Process finished, get the output file content and add it to context
         context.setStatus("Preparing command output for reduce task");
         String outputContent = FileUtils.readFileToString(outputFile); // TODO handle binary results
+        // FIXME what about memory limit?
 
         Text key = new Text();
         Text value = new Text();
@@ -146,12 +150,10 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
         value.set(outputContent);
         context.write(key, value);
 
-        writer.close(); // TODO close file?
-
         // Remove temporary output files
-        // TODO uncomment after debugging
-        /*if (!outputFile.delete())
-			Hadoopizer.logger.warning("Cannot delete output file: " + outputFile.getAbsolutePath());*/
+        // FIXME is it necessary?
+        if (!outputFile.delete())
+			Hadoopizer.logger.warning("Cannot delete output file: " + outputFile.getAbsolutePath());
     }
 
 

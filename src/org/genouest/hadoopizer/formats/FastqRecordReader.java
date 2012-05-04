@@ -22,20 +22,21 @@ public class FastqRecordReader extends RecordReader<LongWritable, Text> {
     private long start;
     private long end;
     private boolean stillInChunk = true;
+    private long splitStart;
 
     private FSDataInputStream fsin;
     private DataOutputBuffer buffer = new DataOutputBuffer();
 
     private byte[] endTag = null;
 
-    private LongWritable recordKey = null;
-    private Text recordValue = null;
+    private LongWritable recordKey = new LongWritable();
+    private Text recordValue = new Text();
 
 
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
 
-        endTag = "\n@".getBytes("UTF-8");
+        endTag = "\n@".getBytes("UTF-8"); // FIXME there can be some @ in the quality line
 
         Configuration job = context.getConfiguration();
 
@@ -46,10 +47,11 @@ public class FastqRecordReader extends RecordReader<LongWritable, Text> {
 
         fsin = fs.open(path);
         start = fileSplit.getStart();
+        splitStart = start;
         end = fileSplit.getStart() + fileSplit.getLength();
         fsin.seek(start);
 
-        if (start != 0) {
+        if (start != 0) { // Beginning of the whole file
             readUntilMatch(endTag, false);
         }
     }
@@ -57,7 +59,7 @@ public class FastqRecordReader extends RecordReader<LongWritable, Text> {
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
 
-        if (!stillInChunk)
+        if (!stillInChunk) // End of split/file reached
             return false;
 
         long startPos = fsin.getPos();
@@ -68,15 +70,17 @@ public class FastqRecordReader extends RecordReader<LongWritable, Text> {
 
         // If not the start of the file, add missing '@' (removed with regex matching)
         data = new String(buffer.getData(), 0, buffer.getLength(), CHARSET);
-        if (startPos != 0)
+        if (startPos != splitStart)
             data = "@" + data;
+        // If not the start of the file, remove the '@' (added with regex matching)
+        data = data.substring(0, data.length() - endTag.length);
 
         recordKey.set(fsin.getPos());
         recordValue.set(data); // Dump fastq record
 
         buffer.reset();
 
-        if (!status)
+        if (!status) // End of split/file reached
             stillInChunk = false;
 
         return true;
@@ -110,18 +114,29 @@ public class FastqRecordReader extends RecordReader<LongWritable, Text> {
         } 
     }
 
+    /**
+     * Read the split and fill the buffer with one record
+     * 
+     * @param match the characters expected at the beginning of the next record (ie where we should stop)
+     * @param withinBlock True if we are in a record, false otherwise
+     * @return false if there is no more data to read (end of file, or end of split reached), true otherwise
+     * @throws IOException
+     */
     private boolean readUntilMatch(byte[] match, boolean withinBlock) throws IOException {
         int i = 0;
         while (true) {
             int b = fsin.read();
-            if (b == -1)
+            
+            if (b == -1) // End of the file
                 return false;
-            if (withinBlock)
+            
+            if (withinBlock) // In a record, fill the buffer
                 buffer.write(b);
-            if (b == match[i]) {
+            
+            if (b == match[i]) { // one char of the match param recognized
                 i++;
-                if (i >= match.length) {
-                    return fsin.getPos() < end;
+                if (i >= match.length) { // The full match param has been found, we have reached a new record
+                    return fsin.getPos() < end; // Did we reached the end of the split?
                 }
             } else
                 i = 0;
