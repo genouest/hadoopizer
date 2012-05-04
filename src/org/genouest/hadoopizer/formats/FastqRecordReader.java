@@ -17,114 +17,118 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 public class FastqRecordReader extends RecordReader<LongWritable, Text> {
 
-	private static final Charset CHARSET = Charset.forName("UTF-8");
+    private static final Charset CHARSET = Charset.forName("UTF-8");
 
-	private long start;
-	private long end;
-	private boolean stillInChunk = true;
+    private long start;
+    private long end;
+    private boolean stillInChunk = true;
 
-	private FSDataInputStream fsin;
-	private DataOutputBuffer buffer = new DataOutputBuffer();
+    private FSDataInputStream fsin;
+    private DataOutputBuffer buffer = new DataOutputBuffer();
 
-	private byte[] endTag = null;
+    private byte[] endTag = null;
 
-	private LongWritable recordKey = null;
-	private Text recordValue = null;
+    private LongWritable recordKey = null;
+    private Text recordValue = null;
 
+    @Override
+    public void initialize(InputSplit split, TaskAttemptContext context)
+            throws IOException, InterruptedException {
 
-	@Override
-	public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
-		
-		endTag = "\n@".getBytes("UTF-8");
-		
-		Configuration job = context.getConfiguration();
-		
-		FileSplit fileSplit = (FileSplit) split;
-		
-		Path path = fileSplit.getPath();
-		FileSystem fs = path.getFileSystem(job);
+        endTag = "\n@".getBytes("UTF-8");
 
-		fsin = fs.open(path);
-		start = fileSplit.getStart();
-		end = fileSplit.getStart() + fileSplit.getLength();
-		fsin.seek(start);
+        Configuration job = context.getConfiguration();
 
-		if (start != 0) {
-			readUntilMatch(endTag, false);
-		}
-	}
+        FileSplit fileSplit = (FileSplit) split;
 
-	@Override
-	public boolean nextKeyValue() throws IOException, InterruptedException {
-		
-		if (!stillInChunk)
-			return false;
+        Path path = fileSplit.getPath();
+        FileSystem fs = path.getFileSystem(job);
 
-		long startPos = fsin.getPos();
+        fsin = fs.open(path);
+        start = fileSplit.getStart();
+        end = fileSplit.getStart() + fileSplit.getLength();
+        fsin.seek(start);
 
-		boolean status = readUntilMatch(endTag, true);
+        if (start != 0) {
+            readUntilMatch(endTag, false);
+        }
+    }
 
-		String data;
+    @Override
+    public boolean nextKeyValue() throws IOException, InterruptedException {
 
-		// If not the start of the file, add missing '@' (removed with regex matching)
-		data = new String(buffer.getData(), 0, buffer.getLength(), CHARSET);
-		if (startPos != 0)
-			data = "@" + data;
+        if (!stillInChunk)
+            return false;
 
-		recordKey.set(fsin.getPos());
-		recordValue.set(data); // Dump fastq record
+        long startPos = fsin.getPos();
 
-		buffer.reset();
+        boolean status = readUntilMatch(endTag, true);
 
-		if (!status)
-			stillInChunk = false;
+        String data;
 
-		return true;
-	}
+        // If not the start of the file, add missing '@' (removed with regex
+        // matching)
+        data = new String(buffer.getData(), 0, buffer.getLength(), CHARSET);
+        if (startPos != 0)
+            data = "@" + data;
 
-	@Override
-	public LongWritable getCurrentKey() throws IOException, InterruptedException {
+        recordKey.set(fsin.getPos());
+        recordValue.set(data); // Dump fastq record
 
-		return recordKey;
-	}
+        buffer.reset();
 
-	@Override
-	public Text getCurrentValue() throws IOException, InterruptedException {
+        if (!status)
+            stillInChunk = false;
 
-		return recordValue;
-	}
+        return true;
+    }
 
-	@Override
-	public void close() throws IOException {
+    @Override
+    public LongWritable getCurrentKey() throws IOException,
+            InterruptedException {
 
-	    fsin.close();
-	}
+        return recordKey;
+    }
 
-	@Override
-	public float getProgress() throws IOException {
+    @Override
+    public Text getCurrentValue() throws IOException, InterruptedException {
 
-		if (start == end) {
-			return (float)0;
-		} else {
-			return Math.min((float)1.0, (fsin.getPos() - start) / (float)(end - start));
-		} 
-	}
-	
-	private boolean readUntilMatch(byte[] match, boolean withinBlock) throws IOException {
-		int i = 0;
-		while (true) {
-			int b = fsin.read();
-			if (b == -1)
-				return false;
-			if (withinBlock)
-				buffer.write(b);
-			if (b == match[i]) {
-				i++;
-				if (i >= match.length) {
-					return fsin.getPos() < end;
-				}
-			} else
-				i = 0;
-		}
-	}
+        return recordValue;
+    }
+
+    @Override
+    public void close() throws IOException {
+
+        fsin.close();
+    }
+
+    @Override
+    public float getProgress() throws IOException {
+
+        if (start == end) {
+            return (float) 0;
+        } else {
+            return Math.min((float) 1.0, (fsin.getPos() - start)
+                    / (float) (end - start));
+        }
+    }
+
+    private boolean readUntilMatch(byte[] match, boolean withinBlock)
+            throws IOException {
+        int i = 0;
+        while (true) {
+            int b = fsin.read();
+            if (b == -1)
+                return false;
+            if (withinBlock)
+                buffer.write(b);
+            if (b == match[i]) {
+                i++;
+                if (i >= match.length) {
+                    return fsin.getPos() < end;
+                }
+            } else
+                i = 0;
+        }
+    }
 }

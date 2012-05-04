@@ -11,10 +11,13 @@ import org.apache.hadoop.mapreduce.RecordReader;
 
 public class FastqInputFormat extends FileInputFormat<LongWritable, Text> {
 
-	@Override
-	public RecordReader<LongWritable, Text> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
+    @Override
+    public RecordReader<LongWritable, Text> createRecordReader(
+            InputSplit split, TaskAttemptContext context) throws IOException,
+            InterruptedException {
 
-		context.setStatus("Received a fastq split of length: " + split.getLength());
-	    return new FastqRecordReader();
-	}
+        context.setStatus("Received a fastq split of length: "
+                + split.getLength());
+        return new FastqRecordReader();
+    }
 }
