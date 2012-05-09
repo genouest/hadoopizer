@@ -153,7 +153,12 @@ public class JobConfig {
         Element output = (Element) outputs.item(0);
 
         jobOutput = new JobOutput(output.getAttribute("id"));
-        jobOutput.setReducer(output.getElementsByTagName("reducer").item(0).getTextContent());
+        Element reducer = (Element) output.getElementsByTagName("reducer").item(0);
+        jobOutput.setReducer(reducer.getTextContent());
+        if (reducer.hasAttribute("format") && reducer.getAttribute("format").equalsIgnoreCase("sequence")) {
+            // The output needs to be stored as hadoop SequenceFile for reuse in a future hadoop job
+            jobOutput.setSequenceOutput(true);
+        }
 
         String url = output.getElementsByTagName("url").item(0).getTextContent();
         if (url.startsWith("/")) // FIXME handle other schemes
@@ -232,6 +237,9 @@ public class JobConfig {
 
         Element splitter = doc.createElement("reducer");
         splitter.appendChild(doc.createTextNode(jobOutput.getReducer()));
+        if (jobOutput.isSequenceOutput()) {
+            splitter.setAttribute("format", "sequence");
+        }
         outputElement.appendChild(splitter);
 
         Element outUrlElement = doc.createElement("url");

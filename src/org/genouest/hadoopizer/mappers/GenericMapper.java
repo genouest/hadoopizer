@@ -141,7 +141,7 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
 
         // Process finished, get the output file content and add it to context
         context.setStatus("Preparing command output for reduce task");
-        String outputContent = FileUtils.readFileToString(outputFile); // TODO handle binary results
+        String outputContent = FileUtils.readFileToString(outputFile); // TODO handle binary results // FIXME OUPS !! out of memory sur le reducer!!
         // FIXME what about memory limit?
 
         Text key = new Text();

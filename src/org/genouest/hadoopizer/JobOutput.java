@@ -7,6 +7,7 @@ public class JobOutput {
     private String id;
     private URI url;
     private String reducer; // TODO replace with reducer instance
+    private boolean sequenceOutput = false;
     private String localPath;
 
     public JobOutput(String id) {
@@ -60,6 +61,20 @@ public class JobOutput {
      */
     public void setLocalPath(String localPath) {
         this.localPath = localPath;
+    }
+
+    /**
+     * @return the sequenceOutput
+     */
+    public boolean isSequenceOutput() {
+        return sequenceOutput;
+    }
+
+    /**
+     * @param sequenceOutput the sequenceOutput to set
+     */
+    public void setSequenceOutput(boolean sequenceOutput) {
+        this.sequenceOutput = sequenceOutput;
     }
 
 }
