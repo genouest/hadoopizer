@@ -11,20 +11,18 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.JobConfig;
+import org.genouest.hadoopizer.parsers.SAMParser;
 
 public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> { 
 
     private JobConfig config;
     private File inputFile;
-    private LongWritable firstKey;
-    private LongWritable lastKey;
     private BufferedWriter writer;
 
     @Override
@@ -72,10 +70,6 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
 
         // TODO take care of the chunk size (chromosome/read)
 
-        if (firstKey == null)
-            firstKey = key;
-        lastKey = key;
-
         writer.write(value.toString(), 0, value.getLength());
         writer.newLine();
     }
@@ -91,7 +85,7 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
         context.setStatus("Running command");
 
         // Preparing output file
-        File outputFile = createTempFile(new File(System.getProperty("java.io.tmpdir")), "output", ".tmp"); // FIXME better tmp dir!
+        File outputFile = createTempFile(new File(System.getProperty("java.io.tmpdir")), "output", ".tmp");
         config.getJobOutput().setLocalPath(outputFile.getAbsolutePath());
         Hadoopizer.logger.info("Saving temporary results in: " + outputFile);
 
@@ -101,15 +95,13 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
         
         // java.lang.Process only works with 'simple' command lines (no redirections, ...)
         // Write the command line to a temp shell script
-        File cmdFile = createTempFile(new File(System.getProperty("java.io.tmpdir")), "script", ".sh"); // FIXME better tmp dir!
+        File cmdFile = createTempFile(new File(System.getProperty("java.io.tmpdir")), "script", ".sh");
         cmdFile.setExecutable(true);
         FileWriter fw = new FileWriter(cmdFile);
         BufferedWriter cmdWriter = new BufferedWriter(fw);
         cmdWriter.write("#!/bin/bash"); // FIXME dependency on bash
         cmdWriter.newLine();
         cmdWriter.write(command);
-        cmdWriter.newLine();
-        cmdWriter.write("cat "+cmdFile.getAbsolutePath()); // FIXME debug
         cmdWriter.flush();
         cmdWriter.close();
 
@@ -140,20 +132,23 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
         }
 
         // Process finished, get the output file content and add it to context
-        context.setStatus("Preparing command output for reduce task");
-        String outputContent = FileUtils.readFileToString(outputFile); // TODO handle binary results // FIXME OUPS !! out of memory sur le reducer!!
-        // FIXME what about memory limit?
-
-        Text key = new Text();
-        Text value = new Text();
-        key.set(firstKey + "-" + lastKey);
-        value.set(outputContent);
-        context.write(key, value);
+        context.setStatus("Parsing command output with " + config.getJobOutput().getReducer() + " parser");
+        
+        if (config.getJobOutput().getReducer().equalsIgnoreCase("sam")) { // TODO dependency injection
+            Hadoopizer.logger.info("Really parsing sam output"); // FIXME debug
+            SAMParser parser = new SAMParser();
+            parser.parse(outputFile, context);
+        }
+        else
+            Hadoopizer.logger.info("Oh no, not parsing sam output"); // FIXME debug
 
         // Remove temporary output files
         // FIXME is it necessary?
         if (!outputFile.delete())
 			Hadoopizer.logger.warning("Cannot delete output file: " + outputFile.getAbsolutePath());
+        
+        // TODO add a status with more informations
+        context.setStatus("Finished");
     }
 
 

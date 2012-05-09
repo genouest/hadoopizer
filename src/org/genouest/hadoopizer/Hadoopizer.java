@@ -127,9 +127,9 @@ public class Hadoopizer {
                     Path hdfsPath = new Path(hdfsBasePath.toString() + Path.SEPARATOR + localPath.getName());// FIXME make it configurable/variable somehow
                     logger.info("adding file '" + url + "' to distributed cache (" + hdfsPath + ")");
                     if (!fs.exists(hdfsPath)) { // FIXME just for debugging
-                    fs.copyFromLocalFile(false, true, localPath, hdfsPath); // FIXME make it work for all protocols
+                        // Avoid recopying if already existing
+                        fs.copyFromLocalFile(false, true, localPath, hdfsPath); // FIXME make it work for all protocols
                     }
-                    // TODO avoid recopying if already existing
 
                     // Add a fragment to the uri: hadoop will automatically create a symlink in the work dir pointing to this file
                     // Don't add the fragment to hdfsPath because it would be encoded in a strange way
@@ -153,15 +153,13 @@ public class Hadoopizer {
 
         DistributedCache.createSymlink(jobConf);
 
-        // TODO create a hadoopizer.sh which will prepare the classpath instead of using the manifest file
-
         // Create the job and its name
         Job job = new Job(jobConf, "Hadoopizer job");
 
         job.setJarByClass(Hadoopizer.class);
         job.setInputFormatClass(FastqInputFormat.class); // FIXME use the correct input format depending on config.xml
         job.setOutputFormatClass(ChainValuesOutputFormat.class); // FIXME use the correct input format depending on config.xml
-
+        
         // Set input path
         FastqInputFormat.setInputPaths(job, inputPath); // FIXME use the correct input format depending on config.xml
 

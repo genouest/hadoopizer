@@ -1,42 +1,36 @@
 package org.genouest.hadoopizer.formats;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.genouest.hadoopizer.Hadoopizer;
 
 public class FastqRecordReader extends RecordReader<LongWritable, Text> {
 
-    private static final Charset CHARSET = Charset.forName("UTF-8");
-
     private long start;
     private long end;
-    private boolean stillInChunk = true;
-    private long splitStart;
 
     private FSDataInputStream fsin;
-    private DataOutputBuffer buffer = new DataOutputBuffer();
-
-    private byte[] endTag = null;
+    private BufferedReader lineReader;
+    ArrayList<String> currentRecord;
 
     private LongWritable recordKey = new LongWritable();
     private Text recordValue = new Text();
 
-
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
-
-        endTag = "\n@".getBytes("UTF-8"); // FIXME there can be some @ in the quality line
 
         Configuration job = context.getConfiguration();
 
@@ -44,46 +38,96 @@ public class FastqRecordReader extends RecordReader<LongWritable, Text> {
 
         Path path = fileSplit.getPath();
         FileSystem fs = path.getFileSystem(job);
-
+        
         fsin = fs.open(path);
         start = fileSplit.getStart();
-        splitStart = start;
         end = fileSplit.getStart() + fileSplit.getLength();
         fsin.seek(start);
+        
+        lineReader = new BufferedReader(new InputStreamReader(fsin));
+        currentRecord = new ArrayList<String>();
 
+        findPotentialFastQRecord();
         if (start != 0) { // Beginning of the whole file
-            readUntilMatch(endTag, false);
+            // Not at the beginning of the file, throw away the first (probably incomplete) line
+            shiftFastQRecord();
         }
     }
 
+    /**
+     * Reads 4 lines (=possibly a record) from the fastq file
+     * 
+     * @return a list of 4 strings from the fastq file
+     * @throws IOException 
+     */
+    public void findPotentialFastQRecord() throws IOException {
+        currentRecord.clear();
+        
+        String newLine;
+        if ((newLine = lineReader.readLine()) != null)
+            currentRecord.add(newLine);
+        if ((newLine = lineReader.readLine()) != null)
+            currentRecord.add(newLine);
+        if ((newLine = lineReader.readLine()) != null)
+            currentRecord.add(newLine);
+        if ((newLine = lineReader.readLine()) != null)
+            currentRecord.add(newLine);
+    }
+
+    /**
+     * Shifts the list fastq record of 1 line in the fastq file
+     * 
+     * @return a list of 4 strings from the fastq file
+     * @throws IOException 
+     */
+    public void shiftFastQRecord() throws IOException {
+        if (!currentRecord.isEmpty())
+            currentRecord.remove(0);
+        
+        String newLine;
+        if ((newLine = lineReader.readLine()) != null)
+            currentRecord.add(newLine);
+    }
+    
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
-
-        if (!stillInChunk) // End of split/file reached
+        
+        if (fsin.getPos() >= end) // Reached the end of split
             return false;
-
-        long startPos = fsin.getPos();
-
-        boolean status = readUntilMatch(endTag, true);
-
-        String data;
-
-        // If not the start of the file, add missing '@' (removed with regex matching)
-        data = new String(buffer.getData(), 0, buffer.getLength(), CHARSET);
-        if (startPos != splitStart)
-            data = "@" + data;
-        // If not the start of the file, remove the '@' (added with regex matching)
-        data = data.substring(0, data.length() - endTag.length);
-
-        recordKey.set(fsin.getPos());
-        recordValue.set(data); // Dump fastq record
-
-        buffer.reset();
-
-        if (!status) // End of split/file reached
-            stillInChunk = false;
-
-        return true;
+        
+        if (currentRecord.size() != 4)
+            return false;
+        
+        int tries = 0;
+        while (tries < 4) { // 4 lines in a record
+            if (currentRecord.get(0).startsWith("@") && currentRecord.get(2).startsWith("+") && (currentRecord.get(1).length() == currentRecord.get(3).length())) {
+                // This looks like a good FastQ record
+                // Construct the string
+                String record = "";
+                for (String line : currentRecord) {
+                    record += line+"\n";
+                }
+                
+                recordKey.set(fsin.getPos());
+                recordValue.set(record);
+                
+                findPotentialFastQRecord(); // Prepare next call
+                return true;
+            }
+            else {
+                shiftFastQRecord();
+                
+                if (currentRecord.size() != 4) {
+                    Hadoopizer.logger.info("Reached the end of fastq file while shifting lines");
+                    return false;
+                }
+                
+                tries++;
+            }
+        }
+        
+        // Error parsing fastq if we get there
+        throw new IOException("Failed to parse FastQ file");
     }
 
     @Override
@@ -102,6 +146,7 @@ public class FastqRecordReader extends RecordReader<LongWritable, Text> {
     public void close() throws IOException {
 
         fsin.close();
+        lineReader.close();
     }
 
     @Override
@@ -112,34 +157,5 @@ public class FastqRecordReader extends RecordReader<LongWritable, Text> {
         } else {
             return Math.min((float)1.0, (fsin.getPos() - start) / (float)(end - start));
         } 
-    }
-
-    /**
-     * Read the split and fill the buffer with one record
-     * 
-     * @param match the characters expected at the beginning of the next record (ie where we should stop)
-     * @param withinBlock True if we are in a record, false otherwise
-     * @return false if there is no more data to read (end of file, or end of split reached), true otherwise
-     * @throws IOException
-     */
-    private boolean readUntilMatch(byte[] match, boolean withinBlock) throws IOException {
-        int i = 0;
-        while (true) {
-            int b = fsin.read();
-            
-            if (b == -1) // End of the file
-                return false;
-            
-            if (withinBlock) // In a record, fill the buffer
-                buffer.write(b);
-            
-            if (b == match[i]) { // one char of the match param recognized
-                i++;
-                if (i >= match.length) { // The full match param has been found, we have reached a new record
-                    return fsin.getPos() < end; // Did we reached the end of the split?
-                }
-            } else
-                i = 0;
-        }
     }
 }

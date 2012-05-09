@@ -20,7 +20,8 @@ public class ChainValuesRecordWriter extends RecordWriter<Text, Text> {
     @Override
     public void write(Text key, Text value) throws IOException, InterruptedException {
 
-        out.writeChars(value.toString()); // FIXME do we need a newline between each record?
+        String line = key.toString() + "\t" + value.toString() + "\n"; // FIXME this is specific to SAM!!
+        out.write(line.getBytes());
     }
 
     @Override
