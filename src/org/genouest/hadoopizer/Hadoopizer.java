@@ -178,41 +178,17 @@ public class Hadoopizer {
         HashSet<JobInput> inputs = config.getStaticInputs();
         for (JobInput jobInput : inputs) {
             Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.cache.dir"));
-            Path hdfsBasePath = new Path(cacheDir.toString() + Path.SEPARATOR + jobInput.getId() + Path.SEPARATOR); // FIXME ask the path from command line arg, and check that it doesn't already exist
-            FileSystem fs = hdfsBasePath.getFileSystem(jobConf);
-
-            // TODO distributed cache can also be used to distribute software
+            Path hdfsBasePath = new Path(cacheDir.toString() + Path.SEPARATOR + jobInput.getId() + Path.SEPARATOR);
 
             if (jobInput.isAutoComplete()) {
                 // We need to add to distributed cache all files with given prefix
                 for (URI url : jobInput.getAllUrls()) {
-                    // TODO compress the files maybe (archives are unarchived on the nodes)
-                    Path localPath = new Path(url);
-                    Path hdfsPath = new Path(hdfsBasePath.toString() + Path.SEPARATOR + localPath.getName());// FIXME make it configurable/variable somehow
-                    logger.info("adding file '" + url + "' to distributed cache (" + hdfsPath + ")");
-                    if (!fs.exists(hdfsPath)) { // FIXME just for debugging, use hdfs in config file instead
-                        // Avoid recopying if already existing
-                        fs.copyFromLocalFile(false, true, localPath, hdfsPath); // FIXME make it work for all protocols
-                    }
-
-                    // Add a fragment to the uri: hadoop will automatically create a symlink in the work dir pointing to this file
-                    // Don't add the fragment to hdfsPath because it would be encoded in a strange way
-                    URI hdfsUri = URI.create(hdfsPath.toString() + "#static_data__" + jobInput.getId() + "__" + localPath.getName()); // FIXME check name collisions
-                    DistributedCache.addCacheFile(hdfsUri, jobConf);
+                    addToDistributedCache(jobInput.getId(), url, hdfsBasePath, jobConf);
                 }
             }
             else {
                 // No auto complete, simply add the given file to the distributed cache
-                Path localPath = new Path(jobInput.getUrl());
-                Path hdfsPath = new Path(hdfsBasePath.toString() + Path.SEPARATOR + localPath.getName()); // FIXME make it configurable/variable somehow
-                logger.info("adding file '" + jobInput.getUrl() + "' to distributed cache (" + hdfsPath + ")");
-                fs.copyFromLocalFile(false, true, localPath, hdfsPath); // FIXME make it work for all protocols
-                // TODO avoid recopying if already existing
-
-                // Add a fragment to the uri: hadoop will automatically create a symlink in the work dir pointing to this file
-                // Don't add the fragment to hdfsPath because it would be encoded in a strange way
-                URI hdfsUri = URI.create(hdfsPath.toString() + "#static_data__" + jobInput.getId() + "__" + localPath.getName()); // FIXME choose a better fragment (beware of name collisions)
-                DistributedCache.addCacheFile(hdfsUri, jobConf);
+                addToDistributedCache(jobInput.getId(), jobInput.getUrl(), hdfsBasePath, jobConf);
             }
         }
 
@@ -249,7 +225,24 @@ public class Hadoopizer {
 
         return job;
     }
+    
+    // TODO distributed cache can also be used to distribute software
+    // TODO compress the files maybe (archives are unarchived on the nodes)
+    private static void addToDistributedCache(String fileId, URI uri, Path hdfsBasePath, Configuration jobConf) throws IOException {
+        
+        FileSystem fs = hdfsBasePath.getFileSystem(jobConf);
+        Path localPath = new Path(uri);
+        Path hdfsPath = new Path(hdfsBasePath.toString() + Path.SEPARATOR + localPath.getName()); // FIXME make it configurable/variable somehow
+        logger.info("adding file '" + uri + "' to distributed cache (" + hdfsPath + ")");
+        fs.copyFromLocalFile(false, true, localPath, hdfsPath); // FIXME make it work for all protocols
+        // TODO avoid recopying if already existing
 
+        // Add a fragment to the uri: hadoop will automatically create a symlink in the work dir pointing to this file
+        // Don't add the fragment to hdfsPath because it would be encoded in a strange way
+        URI hdfsUri = URI.create(hdfsPath.toString() + "#static_data__" + fileId + "__" + localPath.getName()); // FIXME choose a better fragment (beware of name collisions)
+        DistributedCache.addCacheFile(hdfsUri, jobConf);
+    }
+    
     private static void help(Options options) {
 
         HelpFormatter formatter = new HelpFormatter();
