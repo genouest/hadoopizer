@@ -9,7 +9,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -17,7 +16,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.genouest.hadoopizer.Hadoopizer;
 
-public class FastqRecordReader extends RecordReader<LongWritable, Text> {
+public class FastqRecordReader extends RecordReader<Text, Text> {
 
     private long start;
     private long end;
@@ -26,7 +25,7 @@ public class FastqRecordReader extends RecordReader<LongWritable, Text> {
     private BufferedReader lineReader;
     ArrayList<String> currentRecord;
 
-    private LongWritable recordKey = new LongWritable();
+    private Text recordKey = new Text();
     private Text recordValue = new Text();
 
     @Override
@@ -108,7 +107,7 @@ public class FastqRecordReader extends RecordReader<LongWritable, Text> {
                     record += line+"\n";
                 }
                 
-                recordKey.set(fsin.getPos());
+                recordKey.set(currentRecord.get(0).substring(1));
                 recordValue.set(record);
                 
                 findPotentialFastQRecord(); // Prepare next call
@@ -131,7 +130,7 @@ public class FastqRecordReader extends RecordReader<LongWritable, Text> {
     }
 
     @Override
-    public LongWritable getCurrentKey() throws IOException, InterruptedException {
+    public Text getCurrentKey() throws IOException, InterruptedException {
 
         return recordKey;
     }
