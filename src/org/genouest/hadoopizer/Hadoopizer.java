@@ -10,6 +10,12 @@ import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
@@ -40,18 +46,29 @@ public class Hadoopizer {
         Configuration jobConf = new Configuration();
 
         args = new GenericOptionsParser(jobConf, args).getRemainingArgs();
-
-        if (args.length != 1) {
-            System.err.println("Usage:");
-            System.err.println("hadoop jar hadoopizer.jar config.xml"); // TODO revoir le merdier de classpath/ant/sh
+        
+        Options options = new Options();
+        options.addOption("c", "config", true, "Path to a XML file describing the command to run");
+        options.addOption("w", "work-dir", true, "HDFS url where temporary files will be placed. The directory must not exist");
+        options.addOption("h", "help", false, "Display help");
+        options.addOption("v", "version", false, "Display version information");
+        
+        CommandLineParser parser = new GnuParser();
+        CommandLine cmdLine = null;
+        try {
+            cmdLine = parser.parse(options, args);
+        } catch (ParseException e) {
+            System.err.println("Error parsing options");
+            e.printStackTrace();
+            help(options);
             System.exit(1);
         }
-
-        if (args[0].equalsIgnoreCase("--version") || args[0].equalsIgnoreCase("-v"))
+        
+        if (cmdLine.hasOption("v"))
             version();
 
-        if (args[0].equalsIgnoreCase("--help") || args[0].equalsIgnoreCase("-h"))
-            help();
+        if (cmdLine.hasOption("h") || !cmdLine.hasOption("c") || ! cmdLine.hasOption("w"))
+            help(options);
 
         // Load job config file
         File configFile = new File(args[0]);
@@ -181,10 +198,10 @@ public class Hadoopizer {
         return job;
     }
 
-    private static void help() {
+    private static void help(Options options) {
 
-        System.out.println("Usage:");
-        System.out.println("hadoop jar hadoopizer.jar config.xml");
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("hadoop jar hadoopizer.jar", options);
         System.exit(0);
     }
 
