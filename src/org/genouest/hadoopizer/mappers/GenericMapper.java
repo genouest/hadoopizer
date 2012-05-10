@@ -12,14 +12,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.JobConfig;
 import org.genouest.hadoopizer.parsers.SAMParser;
 
-public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> { 
+public class GenericMapper extends Mapper<Text, Text, Text, Text> { 
 
     private JobConfig config;
     private File inputFile;
@@ -64,7 +63,7 @@ public class GenericMapper extends Mapper<LongWritable, Text, Text, Text> {
     }
 
     @Override
-    protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+    protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
 
         //context.getCounter(GENERIC_COUNTER.INPUT_RECORDS).increment(1); // TODO this is useless -> find better use cases if needed
 

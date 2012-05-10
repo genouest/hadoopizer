@@ -7,11 +7,11 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-public class ChainValuesRecordWriter extends RecordWriter<Text, Text> {
+public class SAMRecordWriter extends RecordWriter<Text, Text> {
 
     DataOutputStream out;
 
-    public ChainValuesRecordWriter(DataOutputStream out) {
+    public SAMRecordWriter(DataOutputStream out) {
 
         super();
         this.out = out;

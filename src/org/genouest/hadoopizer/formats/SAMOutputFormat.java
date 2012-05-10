@@ -11,7 +11,7 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-public class ChainValuesOutputFormat extends FileOutputFormat<Text, Text> {
+public class SAMOutputFormat extends FileOutputFormat<Text, Text> implements HadoopizerOutputFormat {
 
     @Override
     public RecordWriter<Text, Text> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
@@ -20,7 +20,13 @@ public class ChainValuesOutputFormat extends FileOutputFormat<Text, Text> {
         FileSystem fs = path.getFileSystem(conf);
         FSDataOutputStream out = fs.create(new Path(path, context.getJobName() + "_results.out")); // FIXME better filename
 
-        return new ChainValuesRecordWriter(out);
+        return new SAMRecordWriter(out);
+    }
+
+    @Override
+    public String getId() {
+        
+        return "sam";
     }
 
 }

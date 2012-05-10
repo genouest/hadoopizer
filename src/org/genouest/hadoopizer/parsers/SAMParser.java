@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.genouest.hadoopizer.Hadoopizer;
@@ -15,7 +14,7 @@ public class SAMParser {
 
     // TODO write an interface
 
-    public void parse(File samFile, Mapper<LongWritable, Text, Text, Text>.Context context) throws IOException, InterruptedException { // FIXME type problem here -> solution is ok?
+    public void parse(File samFile, Mapper<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException { // FIXME type problem here -> solution is ok?
 
         String line;
 

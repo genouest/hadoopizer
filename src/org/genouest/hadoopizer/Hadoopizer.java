@@ -22,9 +22,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
-import org.genouest.hadoopizer.formats.ChainValuesOutputFormat;
-import org.genouest.hadoopizer.formats.FastqInputFormat;
 import org.genouest.hadoopizer.mappers.GenericMapper;
 import org.xml.sax.SAXException;
 
@@ -71,8 +71,8 @@ public class Hadoopizer {
             help(options);
 
         // Load job config file
-        File configFile = new File(args[0]);
-        logger.info("reading config file: "+configFile.getAbsolutePath());
+        File configFile = new File(cmdLine.getOptionValue("c"));
+        logger.info("Reading config file: "+configFile.getAbsolutePath());
 
         if (!configFile.isFile()) {
             System.err.println("Couldn't read configuration file");
@@ -174,11 +174,15 @@ public class Hadoopizer {
         Job job = new Job(jobConf, "Hadoopizer job");
 
         job.setJarByClass(Hadoopizer.class);
-        job.setInputFormatClass(FastqInputFormat.class); // FIXME use the correct input format depending on config.xml
-        job.setOutputFormatClass(ChainValuesOutputFormat.class); // FIXME use the correct input format depending on config.xml
+        
+        FileInputFormat<?, ?> iFormat = config.getSplittableInput().getFileInputFormat();
+        job.setInputFormatClass(iFormat.getClass());
+        
+        FileOutputFormat<?, ?> oFormat = config.getJobOutput().getFileOutputFormat();
+        job.setOutputFormatClass(oFormat.getClass());
         
         // Set input path
-        FastqInputFormat.setInputPaths(job, inputPath); // FIXME use the correct input format depending on config.xml
+        FileInputFormat.setInputPaths(job, inputPath);
 
         // Set the Mapper class
         job.setMapperClass(GenericMapper.class);
@@ -193,7 +197,7 @@ public class Hadoopizer {
         job.setOutputValueClass(Text.class);// FIXME use the correct type depending on config.xml
 
         // Set output path
-        ChainValuesOutputFormat.setOutputPath(job, new Path(config.getJobOutput().getUrl())); // FIXME use a proper outputformat class
+        FileOutputFormat.setOutputPath(job, new Path(config.getJobOutput().getUrl()));
 
         return job;
     }
@@ -210,5 +214,4 @@ public class Hadoopizer {
         System.out.println("Hadoopizer " + VERSION);
         System.exit(0);
     }
-
 }

@@ -1,12 +1,17 @@
 package org.genouest.hadoopizer;
 
 import java.net.URI;
+import java.util.Iterator;
+import java.util.ServiceLoader;
+
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.genouest.hadoopizer.formats.HadoopizerOutputFormat;
 
 public class JobOutput {
 
     private String id;
     private URI url;
-    private String reducer; // TODO replace with reducer instance
+    private String reducer;
     private boolean sequenceOutput = false;
     private String localPath;
 
@@ -75,6 +80,25 @@ public class JobOutput {
      */
     public void setSequenceOutput(boolean sequenceOutput) {
         this.sequenceOutput = sequenceOutput;
+    }
+
+    /**
+     * Get an FileOutputFormat able to merge the output
+     * 
+     * @return an FileOutputFormat corresponding to the reducer defined for this JobOutput
+     */
+    public FileOutputFormat<?, ?> getFileOutputFormat() {
+        HadoopizerOutputFormat outputFormat = null;
+
+        ServiceLoader<HadoopizerOutputFormat> serviceLoader = ServiceLoader.load(HadoopizerOutputFormat.class);
+        Iterator<HadoopizerOutputFormat> iterator = serviceLoader.iterator();
+        while (iterator.hasNext()) {
+            outputFormat = iterator.next();
+            if (outputFormat.getId().equalsIgnoreCase(getReducer()) && (FileOutputFormat.class.isAssignableFrom(outputFormat.getClass())))
+                return (FileOutputFormat<?, ?>) outputFormat;
+        }
+        
+        throw new RuntimeException("Could not find a suitable OutputFormat service for id '" + getReducer() + "'");
     }
 
 }

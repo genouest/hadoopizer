@@ -3,14 +3,18 @@ package org.genouest.hadoopizer;
 import java.io.File;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.genouest.hadoopizer.formats.HadoopizerInputFormat;
 
 public class JobInput {
 
     private String id;
     private URI url;
-    private String splitter; // TODO replace with splitter instance?
+    private String splitter;
     private String localPath;
     private boolean autoComplete = false;
 
@@ -120,5 +124,24 @@ public class JobInput {
      */
     public void setAutoComplete(boolean autoComplete) {
         this.autoComplete = autoComplete;
+    }
+
+    /**
+     * Get an FileInputFormat able to split the splittable input
+     * 
+     * @return an FileInputFormat corresponding to the splitter defined for this JobInput
+     */
+    public FileInputFormat<?, ?> getFileInputFormat() {
+        HadoopizerInputFormat inputFormat = null;
+
+        ServiceLoader<HadoopizerInputFormat> serviceLoader = ServiceLoader.load(HadoopizerInputFormat.class);
+        Iterator<HadoopizerInputFormat> iterator = serviceLoader.iterator();
+        while (iterator.hasNext()) {
+            inputFormat = iterator.next();
+            if (inputFormat.getId().equalsIgnoreCase(getSplitter()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
+                return (FileInputFormat<?, ?>) inputFormat;
+        }
+        
+        throw new RuntimeException("Could not find a suitable InputFormat service for id '" + getSplitter() + "'");
     }
 }
