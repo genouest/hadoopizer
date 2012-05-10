@@ -30,7 +30,7 @@ import org.xml.sax.SAXException;
 
 public class Hadoopizer {
 
-    public static final Logger logger = Logger.getLogger("Hadoopizer"); // FIXME make hadoopizer a constant?
+    public static final Logger logger = Logger.getLogger("Hadoopizer");
 
     private static final String VERSION = "1.0";
 
@@ -49,7 +49,7 @@ public class Hadoopizer {
         
         Options options = new Options();
         options.addOption("c", "config", true, "Path to a XML file describing the command to run");
-        options.addOption("w", "work-dir", true, "HDFS url where temporary files will be placed. The directory must not exist");
+        options.addOption("w", "work-dir", true, "HDFS url where temporary files will be placed. The directory must not exist"); // FIXME this is not required if data is already in hdfs
         options.addOption("h", "help", false, "Display help");
         options.addOption("v", "version", false, "Display version information");
         
@@ -89,6 +89,9 @@ public class Hadoopizer {
         }
 
         logger.info("Will execute the following command: " + config.getRawCommand());
+        
+        jobConf.set("hadoopizer.hdfs.cache.dir", cmdLine.getOptionValue("w"));
+        checkCacheDir(jobConf);
 
         // Prepare a hadoop job
         boolean success = false; 
@@ -111,6 +114,36 @@ public class Hadoopizer {
 
         if (!success) {
             logger.severe("The hadoop job failed!");
+            System.exit(1);
+        }
+    }
+    
+    private static void checkCacheDir(Configuration jobConf) {
+        Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.cache.dir"));
+        URI cacheUri = cacheDir.toUri();
+        
+        if (!cacheUri.getScheme().equalsIgnoreCase("hdfs")) {
+            System.err.println("The working directory (-w option) must be an hdfs path ('" + cacheDir + "' given)");
+            System.exit(1);
+        }
+        
+        FileSystem fs = null;
+        try {
+            fs = cacheDir.getFileSystem(jobConf);
+        } catch (IOException e) {
+            System.err.println("Failed to connect to the working directory (-w option) ('" + cacheDir + "' given)");
+            e.printStackTrace();
+            System.exit(1);
+        }
+        
+        try {
+            if (fs.exists(cacheDir)) {
+                System.err.println("The working directory (-w option) must not already exist befoe launching Hadoopizer ('" + cacheDir + "' given)");
+                System.exit(1);
+            }
+        } catch (IOException e) {
+            System.err.println("Failed to check the existence of the working directory (-w option) ('" + cacheDir + "' given)");
+            e.printStackTrace();
             System.exit(1);
         }
     }
@@ -138,12 +171,13 @@ public class Hadoopizer {
             // TODO distributed cache can also be used to distribute software
 
             if (jobInput.isAutoComplete()) {
+                // We need to add to distributed cache all files with given prefix
                 for (URI url : jobInput.getAllUrls()) {
                     // TODO compress the files maybe (archives are unarchived on the nodes)
                     Path localPath = new Path(url);
                     Path hdfsPath = new Path(hdfsBasePath.toString() + Path.SEPARATOR + localPath.getName());// FIXME make it configurable/variable somehow
                     logger.info("adding file '" + url + "' to distributed cache (" + hdfsPath + ")");
-                    if (!fs.exists(hdfsPath)) { // FIXME just for debugging
+                    if (!fs.exists(hdfsPath)) { // FIXME just for debugging, use hdfs in config file
                         // Avoid recopying if already existing
                         fs.copyFromLocalFile(false, true, localPath, hdfsPath); // FIXME make it work for all protocols
                     }
@@ -155,6 +189,7 @@ public class Hadoopizer {
                 }
             }
             else {
+                // No auto complete, simply add the given file to the distributed cache
                 Path localPath = new Path(jobInput.getUrl());
                 Path hdfsPath = new Path(hdfsBasePath.toString() + Path.SEPARATOR + localPath.getName()); // FIXME make it configurable/variable somehow
                 logger.info("adding file '" + jobInput.getUrl() + "' to distributed cache (" + hdfsPath + ")");
