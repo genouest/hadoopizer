@@ -91,7 +91,7 @@ public class Hadoopizer {
         logger.info("Will execute the following command: " + config.getRawCommand());
         
         jobConf.set("hadoopizer.hdfs.cache.dir", cmdLine.getOptionValue("w"));
-        checkCacheDir(jobConf);
+        checkDirs(config, jobConf);
 
         // Prepare a hadoop job
         boolean success = false; 
@@ -118,7 +118,7 @@ public class Hadoopizer {
         }
     }
     
-    private static void checkCacheDir(Configuration jobConf) {
+    private static void checkDirs(JobConfig config, Configuration jobConf) {
         Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.cache.dir"));
         URI cacheUri = cacheDir.toUri();
         
@@ -138,12 +138,24 @@ public class Hadoopizer {
         
         try {
             if (fs.exists(cacheDir)) {
-                System.err.println("The working directory (-w option) must not already exist befoe launching Hadoopizer ('" + cacheDir + "' given)");
+                System.err.println("The working directory (-w option) must not already exist before launching Hadoopizer ('" + cacheDir + "' given)");
                 System.exit(1);
             }
         } catch (IOException e) {
-            System.err.println("Failed to check the existence of the working directory (-w option) ('" + cacheDir + "' given)");
+            System.err.println("Failed checking the existence of the working directory (-w option) ('" + cacheDir + "' given)");
             e.printStackTrace();
+            System.exit(1);
+        }
+
+        Path outputDir = new Path(config.getJobOutput().getUrl());
+        try {
+            FileSystem outputFs = outputDir.getFileSystem(jobConf);
+            if (outputFs.exists(outputDir)) {
+                System.err.println("The output directory must not already exist before launching Hadoopizer ('" + outputDir + "' given)");
+                System.exit(1);
+            }
+        } catch (IOException e) {
+            System.err.println("Failed checking the existence of the output directory ('" + outputDir + "' given)");
             System.exit(1);
         }
     }
@@ -152,7 +164,7 @@ public class Hadoopizer {
 
         Path inputPath = new Path(config.getSplittableInput().getUrl());
 
-        jobConf.set("mapred.child.java.opts", "-Xmx1024m"); // FIXME make this configurable?
+        jobConf.set("mapred.child.java.opts", "-Xmx1024m"); // FIXME make this (and other mapred keys) configurable in the config file
         // Set job config
         try {
             jobConf.set("hadoopizer.job.config", config.dumpXml());
@@ -165,7 +177,8 @@ public class Hadoopizer {
         // Add static input files to distributed cache
         HashSet<JobInput> inputs = config.getStaticInputs();
         for (JobInput jobInput : inputs) {
-            Path hdfsBasePath = new Path("hdfs://192.168.2.20/data/tmp/" + jobInput.getId() + Path.SEPARATOR); // FIXME ask the path from command line arg, and check that it doesn't already exist
+            Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.cache.dir"));
+            Path hdfsBasePath = new Path(cacheDir.toString() + Path.SEPARATOR + jobInput.getId() + Path.SEPARATOR); // FIXME ask the path from command line arg, and check that it doesn't already exist
             FileSystem fs = hdfsBasePath.getFileSystem(jobConf);
 
             // TODO distributed cache can also be used to distribute software
@@ -177,7 +190,7 @@ public class Hadoopizer {
                     Path localPath = new Path(url);
                     Path hdfsPath = new Path(hdfsBasePath.toString() + Path.SEPARATOR + localPath.getName());// FIXME make it configurable/variable somehow
                     logger.info("adding file '" + url + "' to distributed cache (" + hdfsPath + ")");
-                    if (!fs.exists(hdfsPath)) { // FIXME just for debugging, use hdfs in config file
+                    if (!fs.exists(hdfsPath)) { // FIXME just for debugging, use hdfs in config file instead
                         // Avoid recopying if already existing
                         fs.copyFromLocalFile(false, true, localPath, hdfsPath); // FIXME make it work for all protocols
                     }

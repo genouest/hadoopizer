@@ -6,6 +6,7 @@ import java.util.ServiceLoader;
 
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.genouest.hadoopizer.formats.HadoopizerOutputFormat;
+import org.genouest.hadoopizer.parsers.OutputParser;
 
 public class JobOutput {
 
@@ -101,4 +102,23 @@ public class JobOutput {
         throw new RuntimeException("Could not find a suitable OutputFormat service for id '" + getReducer() + "'");
     }
 
+
+    /**
+     * Get an OutputParser able to split the command output in key/values
+     * 
+     * @return an OutputParser corresponding to the reducer defined for this JobOutput
+     */
+    public OutputParser getOutputParser() {
+        OutputParser outputParser = null;
+
+        ServiceLoader<OutputParser> serviceLoader = ServiceLoader.load(OutputParser.class);
+        Iterator<OutputParser> iterator = serviceLoader.iterator();
+        while (iterator.hasNext()) {
+            outputParser = iterator.next();
+            if (outputParser.getId().equalsIgnoreCase(getReducer()))
+                return outputParser;
+        }
+        
+        throw new RuntimeException("Could not find a suitable OutputParser service for id '" + getReducer() + "'");
+    }
 }

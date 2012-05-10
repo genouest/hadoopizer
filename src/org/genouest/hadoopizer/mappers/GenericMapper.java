@@ -16,7 +16,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.JobConfig;
-import org.genouest.hadoopizer.parsers.SAMParser;
+import org.genouest.hadoopizer.parsers.OutputParser;
 
 public class GenericMapper extends Mapper<Text, Text, Text, Text> { 
 
@@ -64,11 +64,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
 
     @Override
     protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
-
-        //context.getCounter(GENERIC_COUNTER.INPUT_RECORDS).increment(1); // TODO this is useless -> find better use cases if needed
-
-        // TODO take care of the chunk size (chromosome/read)
-
+        
         writer.write(value.toString(), 0, value.getLength());
         writer.newLine();
     }
@@ -132,21 +128,13 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
 
         // Process finished, get the output file content and add it to context
         context.setStatus("Parsing command output with " + config.getJobOutput().getReducer() + " parser");
-        
-        if (config.getJobOutput().getReducer().equalsIgnoreCase("sam")) { // TODO dependency injection
-            Hadoopizer.logger.info("Really parsing sam output"); // FIXME debug
-            SAMParser parser = new SAMParser();
-            parser.parse(outputFile, context);
-        }
-        else
-            Hadoopizer.logger.info("Oh no, not parsing sam output"); // FIXME debug
+        OutputParser parser = config.getJobOutput().getOutputParser();
+        parser.parse(outputFile, context);
 
         // Remove temporary output files
-        // FIXME is it necessary?
         if (!outputFile.delete())
 			Hadoopizer.logger.warning("Cannot delete output file: " + outputFile.getAbsolutePath());
         
-        // TODO add a status with more informations
         context.setStatus("Finished");
     }
 

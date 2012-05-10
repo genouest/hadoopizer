@@ -10,10 +10,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.genouest.hadoopizer.Hadoopizer;
 
-public class SAMParser {
+public class SAMOutputParser implements OutputParser {
 
-    // TODO write an interface
-
+    @Override
     public void parse(File samFile, Mapper<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException { // FIXME type problem here -> solution is ok?
 
         String line;
@@ -50,5 +49,11 @@ public class SAMParser {
         samReader.close();
 
         Hadoopizer.logger.info(entriesParsed + " entries parsed in SAM output file");
+    }
+
+    @Override
+    public String getId() {
+        
+        return "sam";
     }
 }
