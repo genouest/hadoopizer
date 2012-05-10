@@ -228,18 +228,37 @@ public class Hadoopizer {
     
     // TODO distributed cache can also be used to distribute software
     // TODO compress the files maybe (archives are unarchived on the nodes)
+    // TODO avoid recopying if already existing
     private static void addToDistributedCache(String fileId, URI uri, Path hdfsBasePath, Configuration jobConf) throws IOException {
         
         FileSystem fs = hdfsBasePath.getFileSystem(jobConf);
         Path localPath = new Path(uri);
-        Path hdfsPath = new Path(hdfsBasePath.toString() + Path.SEPARATOR + localPath.getName()); // FIXME make it configurable/variable somehow
-        logger.info("adding file '" + uri + "' to distributed cache (" + hdfsPath + ")");
-        fs.copyFromLocalFile(false, true, localPath, hdfsPath); // FIXME make it work for all protocols
-        // TODO avoid recopying if already existing
+        Path hdfsPath = new Path(hdfsBasePath.toString() + Path.SEPARATOR + localPath.getName());
+        
+        logger.info("Adding file '" + uri + "' to distributed cache (" + hdfsPath + ")");
+        
+        if (uri.getScheme().equalsIgnoreCase("file")) {
+            fs.copyFromLocalFile(false, true, localPath, hdfsPath);
+        }
+        else if (uri.getScheme().equalsIgnoreCase("hdfs")) {
+            Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.cache.dir"));
+            URI cacheUri = cacheDir.toUri();
+            if (!uri.getHost().equalsIgnoreCase(cacheUri.getHost())) {
+                // No transfer needed if on the same hdfs host
+                // TODO Otherwise, download then copy? or just keep it like that? Need to test this
+            }
+            else {
+                hdfsPath = localPath;
+            }
+        }
+        else {
+            // TODO stop everything, we don't know how to do!! support other protocols (s3?)
+        }
 
         // Add a fragment to the uri: hadoop will automatically create a symlink in the work dir pointing to this file
         // Don't add the fragment to hdfsPath because it would be encoded in a strange way
-        URI hdfsUri = URI.create(hdfsPath.toString() + "#static_data__" + fileId + "__" + localPath.getName()); // FIXME choose a better fragment (beware of name collisions)
+        // FIXME choose a better fragment (beware of name collisions)
+        URI hdfsUri = URI.create(hdfsPath.toString() + "#static_data__" + fileId + "__" + localPath.getName());
         DistributedCache.addCacheFile(hdfsUri, jobConf);
     }
     
