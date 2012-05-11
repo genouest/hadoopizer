@@ -1,8 +1,6 @@
 package org.genouest.hadoopizer.formats;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import org.apache.hadoop.conf.Configuration;
@@ -10,44 +8,68 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.util.LineReader;
 import org.genouest.hadoopizer.Hadoopizer;
 
+/**
+ * Inspired by org.apache.hadoop.util.LineReader
+ *
+ */
 public class FastqRecordReader extends RecordReader<Text, Text> {
 
     private long start;
     private long end;
+    private long pos;
 
-    private FSDataInputStream fsin;
-    private BufferedReader lineReader;
-    ArrayList<String> currentRecord;
+    private LineReader lineReader;
+    ArrayList<String> currentRecord = new ArrayList<String>();
 
     private Text recordKey = new Text();
     private Text recordValue = new Text();
-
+    
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
 
-        Configuration job = context.getConfiguration();
+        // TODO test support for compressed input (see org.apache.hadoop.mapreduce.lib.input.LineRecordReader)
 
         FileSplit fileSplit = (FileSplit) split;
+        Configuration job = context.getConfiguration();
 
-        Path path = fileSplit.getPath();
-        FileSystem fs = path.getFileSystem(job);
-        
-        fsin = fs.open(path);
         start = fileSplit.getStart();
-        end = fileSplit.getStart() + fileSplit.getLength();
-        fsin.seek(start);
+        end = start + fileSplit.getLength();
         
-        lineReader = new BufferedReader(new InputStreamReader(fsin));
-        currentRecord = new ArrayList<String>();
+        Path path = fileSplit.getPath();
+        CompressionCodecFactory compressionCodecs = new CompressionCodecFactory(job);
+        CompressionCodec codec = compressionCodecs.getCodec(path);
+        
+        // TODO add compressor in the config.xml file
+        
+        FileSystem fs = path.getFileSystem(job);
+        FSDataInputStream fsin = fs.open(path);
+        
+        if (codec != null) {
+            // Input file is compressed: it is not splitted => no need to seek
+            lineReader = new LineReader(codec.createInputStream(fsin), job);
+        }
+        else {
+            lineReader = new LineReader(fsin, job);
+            if (start != 0) {
+                --start;
+                fsin.seek(start);
+            }
+        }
+        
+        pos = start;
 
         findPotentialFastQRecord();
-        if (start != 0) { // Beginning of the whole file
+        
+        if (start != 0 && codec == null) { // Not the beginning of the whole file (impossible if compressed as there will only be 1 split)
             // Not at the beginning of the file, throw away the first (probably incomplete) line
             shiftFastQRecord();
         }
@@ -62,15 +84,22 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
     public void findPotentialFastQRecord() throws IOException {
         currentRecord.clear();
         
-        String newLine;
-        if ((newLine = lineReader.readLine()) != null)
-            currentRecord.add(newLine);
-        if ((newLine = lineReader.readLine()) != null)
-            currentRecord.add(newLine);
-        if ((newLine = lineReader.readLine()) != null)
-            currentRecord.add(newLine);
-        if ((newLine = lineReader.readLine()) != null)
-            currentRecord.add(newLine);
+        Text newLine = new Text("");
+        pos += lineReader.readLine(newLine);
+        if (newLine != null)
+            currentRecord.add(newLine.toString());
+        
+        pos += lineReader.readLine(newLine);
+        if (newLine != null)
+            currentRecord.add(newLine.toString());
+        
+        pos += lineReader.readLine(newLine);
+        if (newLine != null)
+            currentRecord.add(newLine.toString());
+        
+        pos += lineReader.readLine(newLine);
+        if (newLine != null)
+            currentRecord.add(newLine.toString());
     }
 
     /**
@@ -82,16 +111,19 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
     public void shiftFastQRecord() throws IOException {
         if (!currentRecord.isEmpty())
             currentRecord.remove(0);
-        
-        String newLine;
-        if ((newLine = lineReader.readLine()) != null)
-            currentRecord.add(newLine);
+
+        Text newLine = new Text("");
+        pos += lineReader.readLine(newLine);
+        if (newLine != null)
+            currentRecord.add(newLine.toString());
     }
     
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
         
-        if (fsin.getPos() >= end) // Reached the end of split
+        // FIXME the last record is not read
+        
+        if (pos >= end) // Reached the end of split
             return false;
         
         if (currentRecord.size() != 4)
@@ -144,17 +176,17 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
     @Override
     public void close() throws IOException {
 
-        fsin.close();
-        lineReader.close();
+        if (lineReader != null)
+            lineReader.close();
     }
 
     @Override
     public float getProgress() throws IOException {
 
         if (start == end) {
-            return (float)0;
+            return (float) 0;
         } else {
-            return Math.min((float)1.0, (fsin.getPos() - start) / (float)(end - start));
+            return Math.min((float) 1.0, (pos - start) / (float)(end - start));
         } 
     }
 }
