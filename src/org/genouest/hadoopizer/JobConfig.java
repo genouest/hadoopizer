@@ -9,7 +9,9 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -37,24 +39,36 @@ public class JobConfig {
     private JobInput splittableInput;
     private HashSet<JobInput> staticInputs;
     private JobOutput jobOutput;
+    private HashMap<String, String> hadoopConfig;
 
     public JobConfig() {
 
         staticInputs = new HashSet<JobInput>();
+        hadoopConfig = new HashMap<String, String>();
     }
-
+    
+    /**
+     * @param configFile
+     * @throws FileNotFoundException
+     */
     public void load(File configFile) throws FileNotFoundException {
 
         FileInputStream fis = new FileInputStream(configFile);
         load(fis);
     }
 
+    /**
+     * @param configContent
+     */
     public void load(String configContent) {
 
         InputStream is = new ByteArrayInputStream(configContent.getBytes());
         load(is);
     }
 
+    /**
+     * @param configContent
+     */
     public void load(InputStream configContent) {
 
         // TODO validate using xml schema
@@ -100,7 +114,7 @@ public class JobConfig {
             System.exit(1);
         }
 
-        for(int i = 0; i < inputs.getLength(); i++){
+        for(int i = 0; i < inputs.getLength(); i++) {
             Element input = (Element) inputs.item(i);
 
             JobInput jobInput = new JobInput(input.getAttribute("id"));
@@ -161,7 +175,7 @@ public class JobConfig {
         }
 
         String url = output.getElementsByTagName("url").item(0).getTextContent();
-        if (url.startsWith("/")) // FIXME handle other schemes
+        if (url.startsWith("/"))
             url = "file:" + url;
 
         try {
@@ -173,8 +187,29 @@ public class JobConfig {
         }
 
         Hadoopizer.logger.info("Using reducer '"+jobOutput.getReducer()+"' for output '"+jobOutput.getId()+"' ("+jobOutput.getUrl()+")");
+        
+        // Load hadoop specific configuration
+        NodeList hadoops = null;
+        try {
+            XPathExpression expr = xpath.compile("/job/hadoop/config");
+            hadoops = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+        } catch (XPathExpressionException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        
+        for(int i = 0; i < hadoops.getLength(); i++) {
+            Element hConf = (Element) hadoops.item(i);
+            if (hConf.hasAttribute("key") && !hConf.getAttribute("key").isEmpty() && !hConf.getTextContent().isEmpty()) {
+                hadoopConfig.put(hConf.getAttribute("key"), hConf.getTextContent());
+            }
+        }
     }
 
+    /**
+     * @return
+     * @throws ParserConfigurationException
+     */
     public String dumpXml() throws ParserConfigurationException {
         DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
@@ -225,7 +260,7 @@ public class JobConfig {
         Element urlElement = doc.createElement("url");
         inputElement.appendChild(urlElement);
         urlElement.appendChild(doc.createTextNode(splittableInput.getUrl().toString()));
-        // FIXME can we use autocomplete for splittable input?
+        // TODO can we use autocomplete for splittable input?
         if (splittableInput.isAutoComplete()) {
             urlElement.setAttribute("autocomplete", "true");
         }
@@ -245,6 +280,19 @@ public class JobConfig {
         Element outUrlElement = doc.createElement("url");
         outputElement.appendChild(outUrlElement);
         outUrlElement.appendChild(doc.createTextNode(jobOutput.getUrl().toString()));
+        
+        // Hadoop config
+        if (hadoopConfig.size() > 0) {
+            Element hadoopElement = doc.createElement("hadoop");
+            rootElement.appendChild(hadoopElement);
+            
+            for (Map.Entry<String, String> e : hadoopConfig.entrySet()) {
+                Element hadoopConfElement = doc.createElement("config");
+                hadoopElement.appendChild(hadoopConfElement);
+                hadoopConfElement.setAttribute("key", e.getKey());
+                hadoopConfElement.setTextContent(e.getValue());
+            }
+        }
 
         // Convert to string
         TransformerFactory factory = TransformerFactory.newInstance();
@@ -306,18 +354,31 @@ public class JobConfig {
         return finalCommand;
     }
 
+    /**
+     * @return
+     */
     public HashSet<JobInput> getStaticInputs() {
         return staticInputs;
     }
 
+    /**
+     * @return
+     */
     public JobOutput getJobOutput() {
         return jobOutput;
     }
 
+    /**
+     * @return
+     */
     public JobInput getSplittableInput() {
         return splittableInput;
     }
 
+    /**
+     * @param id
+     * @param path
+     */
     public void setStaticInputLocalPath(String id, String path) {
 
         if (id == null || id.isEmpty())
@@ -334,5 +395,19 @@ public class JobConfig {
 
         if (!found)
             throw new RuntimeException("Could not find a static input file with id '" + id + "'");
+    }
+
+    /**
+     * @return the hadoopConfig
+     */
+    public HashMap<String, String> getHadoopConfig() {
+        return hadoopConfig;
+    }
+
+    /**
+     * @param hadoopConfig the hadoopConfig to set
+     */
+    public void setHadoopConfig(HashMap<String, String> hadoopConfig) {
+        this.hadoopConfig = hadoopConfig;
     }
 }

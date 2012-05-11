@@ -39,4 +39,8 @@
         <url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/</url> <!-- how is it handled? -->
         <!-- any other protocol? -->
     </output>
+    
+    <hadoop>
+        <config key="mapred.child.java.opts">-Xmx1024m</config>
+    </hadoop>
 </job>

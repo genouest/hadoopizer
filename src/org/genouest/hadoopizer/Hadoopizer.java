@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -67,7 +68,7 @@ public class Hadoopizer {
         if (cmdLine.hasOption("v"))
             version();
 
-        if (cmdLine.hasOption("h") || !cmdLine.hasOption("c") || ! cmdLine.hasOption("w"))
+        if (cmdLine.hasOption("h") || !cmdLine.hasOption("c") || !cmdLine.hasOption("w"))
             help(options);
 
         // Load job config file
@@ -93,6 +94,8 @@ public class Hadoopizer {
         jobConf.set("hadoopizer.hdfs.cache.dir", cmdLine.getOptionValue("w"));
         checkDirs(config, jobConf);
 
+        setHadoopOptions(config, jobConf);
+        
         // Prepare a hadoop job
         boolean success = false; 
         try {
@@ -163,8 +166,7 @@ public class Hadoopizer {
     private static Job prepareJob(JobConfig config, Configuration jobConf) throws IOException {
 
         Path inputPath = new Path(config.getSplittableInput().getUrl());
-
-        jobConf.set("mapred.child.java.opts", "-Xmx1024m"); // FIXME make this (and other mapred keys) configurable in the config file
+        
         // Set job config
         try {
             jobConf.set("hadoopizer.job.config", config.dumpXml());
@@ -225,10 +227,22 @@ public class Hadoopizer {
 
         return job;
     }
+
+    /**
+     * Add the hadoop options defined in the job config file
+     * 
+     * @param config
+     * @param jobConf 
+     */
+    // TODO test this
+    private static void setHadoopOptions(JobConfig config, Configuration jobConf) {
+        for (Map.Entry<String, String> e : config.getHadoopConfig().entrySet()) {
+            jobConf.set(e.getKey(), e.getValue());
+        }
+    }
     
     // TODO distributed cache can also be used to distribute software
     // TODO compress the files maybe (archives are unarchived on the nodes)
-    // TODO avoid recopying if already existing
     private static void addToDistributedCache(String fileId, URI uri, Path hdfsBasePath, Configuration jobConf) throws IOException {
         
         FileSystem fs = hdfsBasePath.getFileSystem(jobConf);
@@ -253,12 +267,11 @@ public class Hadoopizer {
             }
         }
         else {
-            // TODO stop everything, we don't know how to do!! support other protocols (s3?)
+            // TODO stop everything, we don't know how to do!! support other protocols (s3? ssh? http? ftp?)
         }
 
         // Add a fragment to the uri: hadoop will automatically create a symlink in the work dir pointing to this file
         // Don't add the fragment to hdfsPath because it would be encoded in a strange way
-        // FIXME choose a better fragment (beware of name collisions)
         URI hdfsUri = URI.create(hdfsPath.toString() + "#static_data__" + fileId + "__" + localPath.getName());
         DistributedCache.addCacheFile(hdfsUri, jobConf);
     }
