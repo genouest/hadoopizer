@@ -13,7 +13,7 @@ import org.genouest.hadoopizer.Hadoopizer;
 public class SAMOutputParser implements OutputParser {
 
     @Override
-    public void parse(File samFile, Mapper<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException { // FIXME type problem here -> solution is ok?
+    public void parse(File samFile, Mapper<?, ?, Text, Text>.Context context) throws IOException, InterruptedException { // FIXME  will we need another type some day?
 
         String line;
 
@@ -28,14 +28,16 @@ public class SAMOutputParser implements OutputParser {
         while ((line = samReader.readLine()) != null) {
 
             String trimmedLine = line.trim();
-            if ("".equals(trimmedLine) || trimmedLine.startsWith("@")) // FIXME can we do something with headers?
+            if ("".equals(trimmedLine) || trimmedLine.startsWith("@")) { // FIXME can we do something with headers? yes, merge them
+                Hadoopizer.logger.info("SAM comment: " + trimmedLine); // FIXME debug
                 continue;
+            }
 
             int tabPos = line.indexOf('\t');
 
             if (tabPos != -1) {
 
-                outKey.set(line.substring(0, tabPos));
+                outKey.set(line.substring(0, tabPos)); // TODO can it be a problem if multiple lines with same id (ie read mapping at several locations)?
                 outValue.set(line.substring(tabPos + 1));
 
                 entriesParsed++;

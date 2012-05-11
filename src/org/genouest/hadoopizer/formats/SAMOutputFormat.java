@@ -13,12 +13,15 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 public class SAMOutputFormat extends FileOutputFormat<Text, Text> implements HadoopizerOutputFormat {
 
+    // FIXME add support for compression (see TextOutputFormat implementation)
+    
     @Override
     public RecordWriter<Text, Text> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
         Configuration conf = context.getConfiguration();
-        Path path = getOutputPath(context);
+        Path path = getDefaultWorkFile(context, ".sam");
         FileSystem fs = path.getFileSystem(conf);
-        FSDataOutputStream out = fs.create(new Path(path, context.getJobName() + "_results.out")); // FIXME better filename
+        
+        FSDataOutputStream out = fs.create(path, false);
 
         return new SAMRecordWriter(out);
     }

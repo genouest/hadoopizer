@@ -218,10 +218,10 @@ public class Hadoopizer {
         //job.setReducerClass(GenericReducer.class); // FIXME create a specific one if some outputs types can be reduced before writing
 
         // Set the output key class
-        job.setOutputKeyClass(Text.class); // FIXME use the correct type depending on config.xml
+        job.setOutputKeyClass(Text.class); // FIXME will we need another type some day?
 
         // Set the output value class
-        job.setOutputValueClass(Text.class);// FIXME use the correct type depending on config.xml
+        job.setOutputValueClass(Text.class); // FIXME  will we need another type some day?
 
         // Set output path
         FileOutputFormat.setOutputPath(job, new Path(config.getJobOutput().getUrl()));

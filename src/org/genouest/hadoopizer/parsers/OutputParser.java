@@ -21,5 +21,5 @@ public interface OutputParser {
      * @throws IOException
      * @throws InterruptedException
      */
-    public void parse(File file, Mapper<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException; // FIXME generic/raw type problem
+    public void parse(File file, Mapper<?, ?, Text, Text>.Context context) throws IOException, InterruptedException; // FIXME  will we need another type some day?
 }
