@@ -34,6 +34,10 @@
         <reducer>text</reducer><!-- all the output files are merged in no specific order in a text file, keys/values given to reducer contain hdfs path -->
         <reducer format="sequence">text</reducer><!-- all the output files are stored in a SequenceFile, keys/values given to reducer contain hdfs path -->
         
+        <compressor>gzip</compressor>
+        <compressor>bzip2</compressor>
+        <compressor>none</compressor>
+        
         <url>/local/foo/bar</url> <!-- how is it handled? -->
         <url>hdfs://pouet/</url> <!-- how is it handled? -->
         <url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/</url> <!-- how is it handled? -->

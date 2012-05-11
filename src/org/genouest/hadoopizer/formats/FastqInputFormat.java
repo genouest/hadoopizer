@@ -13,6 +13,7 @@ public class FastqInputFormat extends FileInputFormat<Text, Text> implements Had
     @Override
     public RecordReader<Text, Text> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
 
+        // TODO add support for compressed input
         context.setStatus("Received a fastq split of length: " + split.getLength());
         return new FastqRecordReader();
     }

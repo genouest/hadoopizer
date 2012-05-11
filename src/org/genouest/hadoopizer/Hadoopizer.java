@@ -23,7 +23,6 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -210,8 +209,9 @@ public class Hadoopizer {
         job.setOutputFormatClass(oFormat.getClass());
         
         // Output compression if asked
-        FileOutputFormat.setCompressOutput(job, true); // TODO load it from config
-        FileOutputFormat.setOutputCompressorClass(job, GzipCodec.class); // TODO load it from config
+        FileOutputFormat.setCompressOutput(job, config.getJobOutput().hasCompressor()); // TODO load it from config
+        if (config.getJobOutput().hasCompressor())
+            FileOutputFormat.setOutputCompressorClass(job, config.getJobOutput().getCompressor()); // TODO load it from config
         
         // Set input path
         FileInputFormat.setInputPaths(job, inputPath);

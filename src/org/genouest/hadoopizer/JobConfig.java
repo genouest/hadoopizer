@@ -173,6 +173,19 @@ public class JobConfig {
             // The output needs to be stored as hadoop SequenceFile for reuse in a future hadoop job
             jobOutput.setSequenceOutput(true);
         }
+        // Output compressor
+        Element compressor = (Element) output.getElementsByTagName("compressor").item(0);
+        if (compressor != null) {
+            String codec = compressor.getTextContent();
+            if (JobOutput.isCompressorSupported(codec)) {
+                Hadoopizer.logger.info("Compressing the output with " + codec);
+                jobOutput.setCompressor(codec);
+            }
+            else {
+                System.err.println("Unsupported output compressor '" + codec + "' (allowed: " + JobOutput.getSupportedCompressor() + ")");
+                System.exit(1);
+            }
+        }
 
         String url = output.getElementsByTagName("url").item(0).getTextContent();
         if (url.startsWith("/"))
@@ -201,6 +214,7 @@ public class JobConfig {
         for(int i = 0; i < hadoops.getLength(); i++) {
             Element hConf = (Element) hadoops.item(i);
             if (hConf.hasAttribute("key") && !hConf.getAttribute("key").isEmpty() && !hConf.getTextContent().isEmpty()) {
+                Hadoopizer.logger.info("Hadoop config key found: '"+hConf.getAttribute("key")+"' -> '"+hConf.getTextContent()+"'");
                 hadoopConfig.put(hConf.getAttribute("key"), hConf.getTextContent());
             }
         }
@@ -276,6 +290,12 @@ public class JobConfig {
             splitter.setAttribute("format", "sequence");
         }
         outputElement.appendChild(splitter);
+
+        if (jobOutput.hasCompressor()) {
+            Element compressor = doc.createElement("compressor");
+            compressor.appendChild(doc.createTextNode(jobOutput.getCompressorName()));
+            outputElement.appendChild(compressor);
+        }
 
         Element outUrlElement = doc.createElement("url");
         outputElement.appendChild(outUrlElement);

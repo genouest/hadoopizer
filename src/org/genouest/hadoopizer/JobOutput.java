@@ -1,9 +1,14 @@
 package org.genouest.hadoopizer;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.ServiceLoader;
 
+import org.apache.hadoop.io.compress.BZip2Codec;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.genouest.hadoopizer.formats.HadoopizerOutputFormat;
 import org.genouest.hadoopizer.parsers.OutputParser;
@@ -15,6 +20,13 @@ public class JobOutput {
     private String reducer;
     private boolean sequenceOutput = false;
     private String localPath = "";
+    private String compressor;
+    
+    private static final HashMap<String, Class<? extends CompressionCodec>> allowedCodecs = new HashMap<String, Class<? extends CompressionCodec>>();
+    static {
+        allowedCodecs.put("gzip", GzipCodec.class);
+        allowedCodecs.put("bzip2", BZip2Codec.class);
+    }
 
     public JobOutput(String id) {
         this.id = id;
@@ -120,5 +132,53 @@ public class JobOutput {
         }
         
         throw new RuntimeException("Could not find a suitable OutputParser service for id '" + getReducer() + "'");
+    }
+
+    /**
+     * @return The name of the compressor to use
+     */
+    public String getCompressorName() {
+        return compressor;
+    }
+    
+    /**
+     * @return the compressor
+     */
+    public Class<? extends CompressionCodec> getCompressor() {
+        if (allowedCodecs.containsKey(compressor))
+            return allowedCodecs.get(compressor);
+        
+        return null;
+    }
+
+    /**
+     * @param compressor the compressor to set
+     */
+    public void setCompressor(String compressor) {
+        this.compressor = compressor;
+    }
+
+    /**
+     * @return true if a compressor is set
+     */
+    public boolean hasCompressor() {
+        return allowedCodecs.containsKey(compressor);
+    }
+    
+    /**
+     * @return true if given compressor name is supported
+     */
+    public static boolean isCompressorSupported(String compressor) {
+        return allowedCodecs.containsKey(compressor);
+    }
+
+    public static String getSupportedCompressor() {
+        String sup = "";
+        
+        for (Entry<String, Class<? extends CompressionCodec>> e : allowedCodecs.entrySet()) {
+            sup += e.getKey() + " ";
+        }
+        
+        return sup;
     }
 }
