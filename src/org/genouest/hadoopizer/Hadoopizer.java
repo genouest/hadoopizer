@@ -23,6 +23,7 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -198,7 +199,7 @@ public class Hadoopizer {
         DistributedCache.createSymlink(jobConf);
 
         // Create the job and its name
-        Job job = new Job(jobConf, "Hadoopizer job");
+        Job job = new Job(jobConf, "Hadoopizer job"); // TODO find a better name (config?)
 
         job.setJarByClass(Hadoopizer.class);
         
@@ -207,6 +208,10 @@ public class Hadoopizer {
         
         FileOutputFormat<?, ?> oFormat = config.getJobOutput().getFileOutputFormat();
         job.setOutputFormatClass(oFormat.getClass());
+        
+        // Output compression if asked
+        FileOutputFormat.setCompressOutput(job, true); // TODO load it from config
+        FileOutputFormat.setOutputCompressorClass(job, GzipCodec.class); // TODO load it from config
         
         // Set input path
         FileInputFormat.setInputPaths(job, inputPath);

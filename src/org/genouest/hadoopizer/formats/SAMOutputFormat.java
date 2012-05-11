@@ -1,29 +1,46 @@
 package org.genouest.hadoopizer.formats;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.util.ReflectionUtils;
 
-public class SAMOutputFormat extends FileOutputFormat<Text, Text> implements HadoopizerOutputFormat {
-
-    // FIXME add support for compression (see TextOutputFormat implementation)
+public class SAMOutputFormat<K, V> extends FileOutputFormat<K, V> implements HadoopizerOutputFormat {
     
     @Override
-    public RecordWriter<Text, Text> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
-        Configuration conf = context.getConfiguration();
-        Path path = getDefaultWorkFile(context, ".sam");
-        FileSystem fs = path.getFileSystem(conf);
+    public RecordWriter<K, V> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
         
-        FSDataOutputStream out = fs.create(path, false);
+        Configuration conf = context.getConfiguration();
+        
+        boolean compress = getCompressOutput(context);
+        CompressionCodec codec = null;
+        String extension = ".sam";
+        
+        if (compress) {
+            Class<? extends CompressionCodec> codecClass = getOutputCompressorClass(context, GzipCodec.class);
+            codec = (CompressionCodec) ReflectionUtils.newInstance(codecClass, conf);
+            extension += codec.getDefaultExtension();
+        }
 
-        return new SAMRecordWriter(out);
+        Path path = getDefaultWorkFile(context, extension);
+        FileSystem fs = path.getFileSystem(conf);
+
+        FSDataOutputStream out = fs.create(path, false);
+        if (!compress) {
+            return new SAMRecordWriter<K, V>(out);
+        }
+        else {
+            return new SAMRecordWriter<K, V>(new DataOutputStream(codec.createOutputStream(out)));
+        }
     }
 
     @Override
