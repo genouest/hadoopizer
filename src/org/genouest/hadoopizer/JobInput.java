@@ -1,11 +1,14 @@
 package org.genouest.hadoopizer;
 
-import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.genouest.hadoopizer.formats.HadoopizerInputFormat;
@@ -60,21 +63,31 @@ public class JobInput {
     /**
      * Return a list of all urls matching this input.
      * If autocomplete is false, the list contains only 1 element (same as getUrl()).
-     * Otherwise, it will try to return all the files beginning with what is returned by getUrl(). 
+     * Otherwise, it will try to return all the files beginning with what is returned by getUrl().
+     *  
+     * @param jobConf A Configuration object
      * @return the list of input url
      */
-    public HashSet<URI> getAllUrls() {
+    public HashSet<URI> getAllUrls(Configuration jobConf) {
 
         HashSet<URI> urls = new HashSet<URI>();
 
         Path basePath = new Path(url);
         String filePrefix = basePath.getName();
-        File dir = new File(basePath.getParent().toUri());
 
-        File[] listOfFiles = dir.listFiles();
-        for (int i = 0; i < listOfFiles.length; i++) {
-            if (listOfFiles[i].isFile() && listOfFiles[i].getName().startsWith(filePrefix))
-                urls.add(listOfFiles[i].toURI());
+        try {
+            FileSystem fs = basePath.getFileSystem(jobConf);
+            FileStatus[] stats = fs.listStatus(basePath.getParent());
+             
+            for (int i = 0; i < stats.length; i++) {
+                Path path = stats[i].getPath();
+                if (fs.isFile(path) && path.getName().startsWith(filePrefix))
+                    urls.add(path.toUri());
+            }
+        } catch (IOException e) {
+            System.err.println("Unable to autocomplete input file");
+            e.printStackTrace();
+            System.exit(1);
         }
 
         return urls;

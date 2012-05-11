@@ -182,7 +182,7 @@ public class Hadoopizer {
 
             if (jobInput.isAutoComplete()) {
                 // We need to add to distributed cache all files with given prefix
-                for (URI url : jobInput.getAllUrls()) {
+                for (URI url : jobInput.getAllUrls(jobConf)) {
                     addToDistributedCache(jobInput.getId(), url, hdfsBasePath, jobConf);
                 }
             }
@@ -235,12 +235,13 @@ public class Hadoopizer {
         Path localPath = new Path(uri);
         Path hdfsPath = new Path(hdfsBasePath.toString() + Path.SEPARATOR + localPath.getName());
         
-        logger.info("Adding file '" + uri + "' to distributed cache (" + hdfsPath + ")");
         
         if (uri.getScheme().equalsIgnoreCase("file")) {
+            logger.info("Adding file '" + uri + "' to distributed cache (" + hdfsPath + ")");
             fs.copyFromLocalFile(false, true, localPath, hdfsPath);
         }
         else if (uri.getScheme().equalsIgnoreCase("hdfs")) {
+            logger.info("Adding file '" + uri + "' to distributed cache");
             Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.cache.dir"));
             URI cacheUri = cacheDir.toUri();
             if (!uri.getHost().equalsIgnoreCase(cacheUri.getHost())) {
