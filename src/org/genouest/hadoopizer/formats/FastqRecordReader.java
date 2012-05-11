@@ -48,8 +48,6 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
         CompressionCodecFactory compressionCodecs = new CompressionCodecFactory(job);
         CompressionCodec codec = compressionCodecs.getCodec(path);
         
-        // TODO add compressor in the config.xml file
-        
         FileSystem fs = path.getFileSystem(job);
         FSDataInputStream fsin = fs.open(path);
         
@@ -121,7 +119,7 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
         
-        // FIXME the last record is not read
+        // FIXME TAUPE PRIORITY the last record is not read
         
         if (pos >= end) // Reached the end of split
             return false;

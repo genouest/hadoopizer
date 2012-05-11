@@ -209,9 +209,10 @@ public class Hadoopizer {
         job.setOutputFormatClass(oFormat.getClass());
         
         // Output compression if asked
-        FileOutputFormat.setCompressOutput(job, config.getJobOutput().hasCompressor()); // TODO load it from config
+        // TODO instead of loading it from the config, try to guess it like in FastqRecordReader
+        FileOutputFormat.setCompressOutput(job, config.getJobOutput().hasCompressor());
         if (config.getJobOutput().hasCompressor())
-            FileOutputFormat.setOutputCompressorClass(job, config.getJobOutput().getCompressor()); // TODO load it from config
+            FileOutputFormat.setOutputCompressorClass(job, config.getJobOutput().getCompressor());
         
         // Set input path
         FileInputFormat.setInputPaths(job, inputPath);
