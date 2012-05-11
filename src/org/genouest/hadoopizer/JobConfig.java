@@ -123,7 +123,7 @@ public class JobConfig {
             }
 
             String url = input.getElementsByTagName("url").item(0).getTextContent();
-            if (url.startsWith("/")) // FIXME handle other schemes
+            if (url.startsWith("/"))
                 url = "file:" + url;
             try {
                 jobInput.setUrl(new URI(url));
@@ -334,19 +334,19 @@ public class JobConfig {
 
         String finalCommand = command;
 
-        if (splittableInput.getLocalPath().isEmpty()) // FIXME potential nullpointerexception
+        if (splittableInput.getLocalPath().isEmpty())
             throw new RuntimeException("Unable to generate command line: the splittable input local path is empty.");
 
-        finalCommand = finalCommand.replaceAll("\\$\\{" + splittableInput.getId() + "\\}", splittableInput.getLocalPath()); // FIXME beware of special chars ($ etc) in replacement string
+        finalCommand = finalCommand.replaceAll("\\$\\{" + splittableInput.getId() + "\\}", splittableInput.getLocalPath()); // FIXME beware of special chars ($ etc) in replacement string -> if xml validation, special chars are not allowed in ids
 
         for (JobInput in : staticInputs) {
-            if (in.getLocalPath().isEmpty()) // FIXME potential nullpointerexception
+            if (in.getLocalPath().isEmpty())
                 throw new RuntimeException("Unable to generate command line: the '" + in.getId() + "' input local path is empty.");
 
             finalCommand = finalCommand.replaceAll("\\$\\{" + in.getId() + "\\}", in.getLocalPath());
         }
 
-        if (jobOutput.getLocalPath().isEmpty()) // FIXME handle other protocols // FIXME potential nullpointerexception
+        if (jobOutput.getLocalPath().isEmpty()) // FIXME handle other protocols (eg upload output to s3, hdfs, whatever)
             throw new RuntimeException("Unable to generate command line: the '" + jobOutput.getId() + "' output local path is empty.");
 
         finalCommand = finalCommand.replaceAll("\\$\\{" + jobOutput.getId() + "\\}", jobOutput.getLocalPath());

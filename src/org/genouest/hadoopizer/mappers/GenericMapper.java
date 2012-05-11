@@ -7,7 +7,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -55,7 +54,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
 
         // Write data chunk to a temporary input file
         // This input file will be used in the command line launched in the cleanup step
-        inputFile = createTempFile(new File(System.getProperty("java.io.tmpdir")), "input", ".chunk");
+        inputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "input", ".chunk");
         writer = new BufferedWriter(new FileWriter(inputFile));
         Hadoopizer.logger.info("Writing input chunk to '" + inputFile.getAbsolutePath());
 
@@ -80,7 +79,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         context.setStatus("Running command");
 
         // Preparing output file
-        File outputFile = createTempFile(new File(System.getProperty("java.io.tmpdir")), "output", ".tmp");
+        File outputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "output", ".tmp");
         config.getJobOutput().setLocalPath(outputFile.getAbsolutePath());
         Hadoopizer.logger.info("Saving temporary results in: " + outputFile);
 
@@ -90,7 +89,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         
         // java.lang.Process only works with 'simple' command lines (no redirections, ...)
         // Write the command line to a temp shell script
-        File cmdFile = createTempFile(new File(System.getProperty("java.io.tmpdir")), "script", ".sh");
+        File cmdFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "script", ".sh");
         cmdFile.setExecutable(true);
         FileWriter fw = new FileWriter(cmdFile);
         BufferedWriter cmdWriter = new BufferedWriter(fw);
@@ -136,45 +135,5 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
 			Hadoopizer.logger.warning("Cannot delete output file: " + outputFile.getAbsolutePath());
         
         context.setStatus("Finished");
-    }
-
-
-    // TODO externalize
-    /**
-     * Create a new temporary file.
-     * @param directory parent directory of the temporary file to create
-     * @param prefix prefix of the temporary file
-     * @param suffix suffix of the temporary file
-     * @return the new temporary file
-     * @throws IOException if there is an error creating the temporary directory
-     */
-    public static File createTempFile(File directory, String prefix, String suffix) throws IOException {
-
-        if (directory == null)
-            throw new IOException("Parent directory is null");
-
-        if (prefix == null)
-            prefix = "";
-
-        if (suffix == null)
-            suffix = "";
-
-        File tempFile;
-
-        final int maxAttempts = 9;
-        int attemptCount = 0;
-        do {
-            attemptCount++;
-            if (attemptCount > maxAttempts)
-                throw new IOException("Failed to create a unique temporary directory after " + maxAttempts + " attempts.");
-
-            final String filename = prefix + UUID.randomUUID().toString() + suffix;
-            tempFile = new File(directory, filename);
-        } while (tempFile.exists());
-
-        if (!tempFile.createNewFile())
-            throw new IOException("Failed to create temp file " + tempFile.getAbsolutePath());
-
-        return tempFile;
     }
 }

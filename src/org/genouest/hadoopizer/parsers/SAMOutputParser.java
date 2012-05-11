@@ -41,7 +41,7 @@ public class SAMOutputParser implements OutputParser {
                 entriesParsed++;
 
                 context.write(outKey, outValue);
-                context.getCounter("SAMContent", "mapped.reads").increment(1);
+                context.getCounter("SAMContent", "mapped.reads").increment(1); // TODO use GENERIC_COUNTER
             }
 
         }

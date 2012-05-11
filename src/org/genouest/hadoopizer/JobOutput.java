@@ -14,7 +14,7 @@ public class JobOutput {
     private URI url;
     private String reducer;
     private boolean sequenceOutput = false;
-    private String localPath;
+    private String localPath = "";
 
     public JobOutput(String id) {
         this.id = id;

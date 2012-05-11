@@ -20,7 +20,7 @@ public class SAMRecordWriter extends RecordWriter<Text, Text> {
     @Override
     public void write(Text key, Text value) throws IOException, InterruptedException {
 
-        String line = key.toString() + "\t" + value.toString() + "\n"; // FIXME this is specific to SAM!!
+        String line = key.toString() + "\t" + value.toString() + "\n";
         out.write(line.getBytes());
     }
 

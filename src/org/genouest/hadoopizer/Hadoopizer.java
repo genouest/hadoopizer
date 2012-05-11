@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -50,7 +51,7 @@ public class Hadoopizer {
         
         Options options = new Options();
         options.addOption("c", "config", true, "Path to a XML file describing the command to run");
-        options.addOption("w", "work-dir", true, "HDFS url where temporary files will be placed. The directory must not exist"); // FIXME this is not required if data is already in hdfs
+        options.addOption("w", "work-dir", true, "HDFS url where temporary files will be placed. The directory must not already exist");
         options.addOption("h", "help", false, "Display help");
         options.addOption("v", "version", false, "Display version information");
         
@@ -234,7 +235,6 @@ public class Hadoopizer {
      * @param config
      * @param jobConf 
      */
-    // TODO test this
     private static void setHadoopOptions(JobConfig config, Configuration jobConf) {
         for (Map.Entry<String, String> e : config.getHadoopConfig().entrySet()) {
             jobConf.set(e.getKey(), e.getValue());
@@ -287,5 +287,43 @@ public class Hadoopizer {
 
         System.out.println("Hadoopizer " + VERSION);
         System.exit(0);
+    }
+
+    /**
+     * Create a new temporary file.
+     * @param directory parent directory of the temporary file to create
+     * @param prefix prefix of the temporary file
+     * @param suffix suffix of the temporary file
+     * @return the new temporary file
+     * @throws IOException if there is an error creating the temporary directory
+     */
+    public static File createTempFile(File directory, String prefix, String suffix) throws IOException {
+
+        if (directory == null)
+            throw new IOException("Parent directory is null");
+
+        if (prefix == null)
+            prefix = "";
+
+        if (suffix == null)
+            suffix = "";
+
+        File tempFile;
+
+        final int maxAttempts = 9;
+        int attemptCount = 0;
+        do {
+            attemptCount++;
+            if (attemptCount > maxAttempts)
+                throw new IOException("Failed to create a unique temporary directory after " + maxAttempts + " attempts.");
+
+            final String filename = prefix + UUID.randomUUID().toString() + suffix;
+            tempFile = new File(directory, filename);
+        } while (tempFile.exists());
+
+        if (!tempFile.createNewFile())
+            throw new IOException("Failed to create temp file " + tempFile.getAbsolutePath());
+
+        return tempFile;
     }
 }
