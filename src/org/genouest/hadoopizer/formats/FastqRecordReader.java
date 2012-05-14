@@ -64,8 +64,6 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
         }
         
         pos = start;
-
-        findPotentialFastQRecord();
         
         if (start != 0 && codec == null) { // Not the beginning of the whole file (impossible if compressed as there will only be 1 split)
             // Not at the beginning of the file, throw away the first (probably incomplete) line
@@ -119,10 +117,10 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
         
-        // FIXME TAUPE PRIORITY the last record is not read
-        
         if (pos >= end) // Reached the end of split
             return false;
+        
+        findPotentialFastQRecord();
         
         if (currentRecord.size() != 4)
             return false;
@@ -140,7 +138,6 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
                 recordKey.set(currentRecord.get(0).substring(1));
                 recordValue.set(record);
                 
-                findPotentialFastQRecord(); // Prepare next call
                 return true;
             }
             else {
