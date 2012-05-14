@@ -95,7 +95,7 @@ public class Hadoopizer {
         String hdfsWorkDir = cmdLine.getOptionValue("w");
         if (!hdfsWorkDir.endsWith(Path.SEPARATOR))
             hdfsWorkDir += Path.SEPARATOR;
-        jobConf.set("hadoopizer.hdfs.cache.dir", hdfsWorkDir); // FIXME choose a better name maybe?
+        jobConf.set("hadoopizer.hdfs.tmp.dir", hdfsWorkDir);
         
         checkDirs(config, jobConf);
 
@@ -127,7 +127,7 @@ public class Hadoopizer {
     }
     
     private static void checkDirs(JobConfig config, Configuration jobConf) {
-        Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.cache.dir"));
+        Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir"));
         URI cacheUri = cacheDir.toUri();
         
         if (!cacheUri.getScheme().equalsIgnoreCase("hdfs")) {
@@ -184,7 +184,7 @@ public class Hadoopizer {
         // Add static input files to distributed cache
         HashSet<JobInput> inputs = config.getStaticInputs();
         for (JobInput jobInput : inputs) {
-            Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.cache.dir"));
+            Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir"));
             Path hdfsBasePath = new Path(cacheDir.toString() + Path.SEPARATOR + jobInput.getId() + Path.SEPARATOR);
 
             if (jobInput.isAutoComplete()) {
@@ -251,7 +251,7 @@ public class Hadoopizer {
         }
 
         // TODO move this elsewhere?
-        Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.cache.dir") + "temp_header_file.txt");
+        Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + "temp_header_file.txt");
         jobConf.set("hadoopizer.temp.header.file", cacheDir.toString()); // TODO document this
     }
     
@@ -270,7 +270,7 @@ public class Hadoopizer {
         }
         else if (uri.getScheme().equalsIgnoreCase("hdfs")) {
             logger.info("Adding file '" + uri + "' to distributed cache");
-            Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.cache.dir"));
+            Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir"));
             URI cacheUri = cacheDir.toUri();
             if (!uri.getHost().equalsIgnoreCase(cacheUri.getHost())) {
                 // No transfer needed if on the same hdfs host
