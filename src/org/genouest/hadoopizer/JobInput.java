@@ -84,7 +84,7 @@ public class JobInput {
                 
             FileStatus[] stats = fs.listStatus(basePath.getParent());
              
-            for (int i = 0; i < stats.length; i++) { //FIXME null pointer exception if hdfs path given doesn't exist (data/tmp removed)
+            for (int i = 0; i < stats.length; i++) {
                 Path path = stats[i].getPath();
                 if (fs.isFile(path) && path.getName().startsWith(filePrefix))
                     urls.add(path.toUri());
