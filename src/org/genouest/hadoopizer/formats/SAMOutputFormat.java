@@ -36,10 +36,10 @@ public class SAMOutputFormat<K, V> extends FileOutputFormat<K, V> implements Had
 
         FSDataOutputStream out = fs.create(path, false);
         if (!compress) {
-            return new SAMRecordWriter<K, V>(out);
+            return new SAMRecordWriter<K, V>(out, context);
         }
         else {
-            return new SAMRecordWriter<K, V>(new DataOutputStream(codec.createOutputStream(out)));
+            return new SAMRecordWriter<K, V>(new DataOutputStream(codec.createOutputStream(out)), context);
         }
     }
 

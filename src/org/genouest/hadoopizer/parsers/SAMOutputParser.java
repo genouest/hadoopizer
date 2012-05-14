@@ -6,6 +6,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.genouest.hadoopizer.Hadoopizer;
@@ -24,12 +28,25 @@ public class SAMOutputParser implements OutputParser {
         BufferedReader samReader = new BufferedReader(new InputStreamReader(samIs));
 
         int entriesParsed = 0;
-
+        
+        Configuration conf = context.getConfiguration();
+        String headerFileName = conf.get("hadoopizer.temp.header.file");
+        Path headerFile = new Path(headerFileName);
+        FileSystem fs = headerFile.getFileSystem(conf);
+        boolean writeHeader = !fs.exists(headerFile);
+        FSDataOutputStream headerOut = fs.create(headerFile, false);
+        
         while ((line = samReader.readLine()) != null) {
 
             String trimmedLine = line.trim();
-            if ("".equals(trimmedLine) || trimmedLine.startsWith("@")) { // FIXME can we do something with headers? yes, merge them
-                Hadoopizer.logger.info("SAM comment: " + trimmedLine); // FIXME debug
+            if ("".equals(trimmedLine)) {
+                continue;
+            }
+            else if (trimmedLine.startsWith("@") && writeHeader) {
+                // This is a SAM header line: write it in a temp file to prepend to the output file
+                headerOut.write(trimmedLine.getBytes());
+                headerOut.write("\n".getBytes());
+                headerOut.flush();
                 continue;
             }
 
@@ -49,6 +66,7 @@ public class SAMOutputParser implements OutputParser {
         }
 
         samReader.close();
+        headerOut.close();
 
         Hadoopizer.logger.info(entriesParsed + " entries parsed in SAM output file");
     }

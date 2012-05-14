@@ -92,7 +92,11 @@ public class Hadoopizer {
 
         logger.info("Will execute the following command: " + config.getRawCommand());
         
-        jobConf.set("hadoopizer.hdfs.cache.dir", cmdLine.getOptionValue("w"));
+        String hdfsWorkDir = cmdLine.getOptionValue("w");
+        if (!hdfsWorkDir.endsWith(Path.SEPARATOR))
+            hdfsWorkDir += Path.SEPARATOR;
+        jobConf.set("hadoopizer.hdfs.cache.dir", hdfsWorkDir); // FIXME choose a better name maybe?
+        
         checkDirs(config, jobConf);
 
         setHadoopOptions(config, jobConf);
@@ -245,6 +249,10 @@ public class Hadoopizer {
         for (Map.Entry<String, String> e : config.getHadoopConfig().entrySet()) {
             jobConf.set(e.getKey(), e.getValue());
         }
+
+        // TODO move this elsewhere?
+        Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.cache.dir") + "temp_header_file.txt");
+        jobConf.set("hadoopizer.temp.header.file", cacheDir.toString()); // TODO document this
     }
     
     // TODO distributed cache can also be used to distribute software
