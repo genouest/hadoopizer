@@ -77,6 +77,11 @@ public class JobInput {
 
         try {
             FileSystem fs = basePath.getFileSystem(jobConf);
+            
+            if (!fs.exists(basePath.getParent())) {
+                throw new IOException("Input directory not found: " + url);
+            }
+                
             FileStatus[] stats = fs.listStatus(basePath.getParent());
              
             for (int i = 0; i < stats.length; i++) { //FIXME null pointer exception if hdfs path given doesn't exist (data/tmp removed)
