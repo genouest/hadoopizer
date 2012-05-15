@@ -16,12 +16,17 @@ import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
@@ -67,12 +72,56 @@ public class JobConfig {
     }
 
     /**
+     * @param configFile
+     * @throws FileNotFoundException
+     * @throws  
+     */
+    public boolean validateXml(File configFile) throws FileNotFoundException {
+
+        FileInputStream fis = new FileInputStream(configFile);
+        return validateXml(fis);
+    }
+
+    /**
+     * @param configContent
+     */
+    public boolean validateXml(String configContent) {
+
+        InputStream is = new ByteArrayInputStream(configContent.getBytes());
+        return validateXml(is);
+    }
+    
+    /**
+     * @param configContent
+     * @return
+     */
+    public boolean validateXml(InputStream configContent) {
+        
+        StreamSource[] schemaDocuments = new StreamSource[] {new StreamSource("resources/jobconfig.xsd")};
+        Source instanceDocument = new StreamSource(configContent);
+        
+        SchemaFactory sf = SchemaFactory.newInstance("http://www.w3.org/XML/XMLSchema/v1.1");
+        Schema s;
+        try {
+            s = sf.newSchema(schemaDocuments);
+            Validator v = s.newValidator();
+            v.validate(instanceDocument);
+        } catch (SAXException e) {
+            System.err.println("Failed loading XML Schema file for config file");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        return true;
+    }
+    
+    /**
      * @param configContent
      */
     public void load(InputStream configContent) {
-
-        // TODO validate using xml schema
-
+        
         // Open xml config file
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         XPathFactory xPathfactory = XPathFactory.newInstance();
@@ -358,7 +407,7 @@ public class JobConfig {
         if (splittableInput.getLocalPath().isEmpty())
             throw new RuntimeException("Unable to generate command line: the splittable input local path is empty.");
 
-        finalCommand = finalCommand.replaceAll("\\$\\{" + splittableInput.getId() + "\\}", splittableInput.getLocalPath()); // FIXME beware of special chars ($ etc) in replacement string -> if xml validation, special chars are not allowed in ids
+        finalCommand = finalCommand.replaceAll("\\$\\{" + splittableInput.getId() + "\\}", splittableInput.getLocalPath());
 
         for (JobInput in : staticInputs) {
             if (in.getLocalPath().isEmpty())

@@ -15,33 +15,51 @@
     <xs:element name="input">
         <xs:complexType>
             <xs:all>
-                <xs:attribute name="id" type="xs:ID" use="required"/>
-                
                 <xs:element name="splitter" type="xs:string"/>
-                <xs:element name="url" type="xs:string">
-                    <xs:attribute name="autocomplete" type="xs:boolean"/>
+                <xs:element name="url">
+                    <xs:complexType>
+                        <xs:simpleContent>
+                            <xs:extension base="xs:string">
+                                <xs:attribute name="autocomplete" type="xs:boolean"/>
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
                 </xs:element>
             </xs:all>
+            <xs:attribute name="id" type="xs:ID" use="required"/>
         </xs:complexType>
     </xs:element>
 
     <xs:element name="output">
         <xs:complexType>
             <xs:all>
-                <xs:attribute name="id" type="xs:ID" use="required"/>
-                
-                <xs:element name="reducer" type="xs:string"/>
+                <xs:element name="reducer">
+                    <xs:complexType>
+                        <xs:simpleContent>
+                            <xs:extension base="xs:string">
+                                <xs:attribute name="format" type="xs:string"/>
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
+                </xs:element>
                 <xs:element name="compressor" type="xs:string" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="url" type="xs:string"/>
             </xs:all>
+            <xs:attribute name="id" type="xs:ID" use="required"/>
         </xs:complexType>
     </xs:element>
 
     <xs:element name="hadoop">
         <xs:complexType>
             <xs:all>
-                <xs:element name="config" type="xs:string">
-                    <xs:attribute name="key" type="xs:string"/>
+                <xs:element name="config">
+                    <xs:complexType>
+                        <xs:simpleContent>
+                            <xs:extension base="xs:string">
+                                <xs:attribute name="key" type="xs:string"/>
+                            </xs:extension>
+                        </xs:simpleContent>
+                    </xs:complexType>
                 </xs:element>
             </xs:all>
         </xs:complexType>

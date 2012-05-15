@@ -82,6 +82,17 @@ public class Hadoopizer {
         }
 
         JobConfig config = new JobConfig();
+        
+        // Try to validate the xml
+        try {
+            config.validateXml(configFile);
+        } catch (FileNotFoundException e) {
+            System.err.println("Couldn't read configuration file");
+            e.printStackTrace();
+            System.exit(1);
+        }
+        
+        // The xml looks ok, try to load it
         try {
             config.load(configFile);
         } catch (FileNotFoundException e) {

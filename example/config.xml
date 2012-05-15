@@ -9,9 +9,9 @@
         
         <!-- s3n, local, ... = only one url per input -->
         <url>/local/foo/bar/myfile.fasta</url>
-        <url>hdfs://pouet/myfile.fasta</url>
-        <url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/myfile.fasta</url>
-        <url>http://example.org/myfile.fasta</url> <!-- need download or hadoop understands it? -->
+        <!--url>hdfs://pouet/myfile.fasta</url-->
+        <!--url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/myfile.fasta</url-->
+        <!--url>http://example.org/myfile.fasta</url--> <!-- need download or hadoop understands it? -->
         <!-- any other protocol? -->
     </input>
 
@@ -20,25 +20,25 @@
     
         <!-- s3n, local, ... = only one url per input -->
         <url autocomplete="true">/local/foo/bar/myfile</url> <!-- 2 cases here: on nfs (need to be uploaded with -files option) or not (no need to upload) -->
-        <url>hdfs://pouet/myfile.fasta</url> <!-- is it possible as hadoop input? -->
-        <url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/myfile.fasta</url>
-        <url>http://example.org/myfile.fasta</url> <!-- need download+upload or hadoop understands it? -->
+        <!--url>hdfs://pouet/myfile.fasta</url--> <!-- is it possible as hadoop input? -->
+        <!--url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/myfile.fasta</url-->
+        <!--url>http://example.org/myfile.fasta</url--> <!-- need download+upload or hadoop understands it? -->
         <!-- any other protocol? -->
     </input>
     
     <output id="res"> <!-- multiple output is possible -->
         <reducer format="sequence">blast</reducer><!-- each blast output line is transfered as a key/value + the output file is in SequenceFile format -->
-        <reducer>blast</reducer><!-- each blast output line is transfered as a key/value + the output file is in blast format -->
-        <reducer>text</reducer><!-- all the output files are merged in no specific order in a text file, keys/values given to reducer contain hdfs path -->
-        <reducer format="sequence">text</reducer><!-- all the output files are stored in a SequenceFile, keys/values given to reducer contain hdfs path -->
+        <!--reducer>blast</reducer--><!-- each blast output line is transfered as a key/value + the output file is in blast format -->
+        <!--reducer>text</reducer--><!-- all the output files are merged in no specific order in a text file, keys/values given to reducer contain hdfs path -->
+        <!--reducer format="sequence">text</reducer--><!-- all the output files are stored in a SequenceFile, keys/values given to reducer contain hdfs path -->
         
         <compressor>gzip</compressor>
-        <compressor>bzip2</compressor>
-        <compressor>none</compressor>
+        <!--compressor>bzip2</compressor-->
+        <!--compressor>none</compressor-->
         
         <url>/local/foo/bar</url> <!-- how is it handled? -->
-        <url>hdfs://pouet/</url> <!-- how is it handled? -->
-        <url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/</url> <!-- how is it handled? -->
+        <!--url>hdfs://pouet/</url--> <!-- how is it handled? -->
+        <!--url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/</url--> <!-- how is it handled? -->
         <!-- any other protocol? -->
     </output>
     
