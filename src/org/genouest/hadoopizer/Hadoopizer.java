@@ -249,7 +249,6 @@ public class Hadoopizer {
     }
     
     // TODO distributed cache can also be used to distribute software
-    // TODO compress the files maybe (archives are unarchived on the nodes)
     private static void addToDistributedCache(String fileId, URI uri, Path hdfsBasePath, Configuration jobConf) throws IOException {
         
         FileSystem fs = hdfsBasePath.getFileSystem(jobConf);
