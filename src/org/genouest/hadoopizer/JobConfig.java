@@ -118,7 +118,8 @@ public class JobConfig {
             Element input = (Element) inputs.item(i);
 
             JobInput jobInput = new JobInput(input.getAttribute("id"));
-            if (!input.getElementsByTagName("splitter").item(0).getTextContent().equalsIgnoreCase("none")) {
+            boolean isSplittable = input.getElementsByTagName("splitter").item(0).getTextContent().equalsIgnoreCase("none");
+            if (!isSplittable) {
                 jobInput.setSplitter(input.getElementsByTagName("splitter").item(0).getTextContent());
             }
 
@@ -135,7 +136,8 @@ public class JobConfig {
 
             Element urlEl = (Element) input.getElementsByTagName("url").item(0);
 
-            if (urlEl.hasAttribute("autocomplete") && urlEl.getAttribute("autocomplete").equalsIgnoreCase("true")) {
+            if (!isSplittable && urlEl.hasAttribute("autocomplete") && urlEl.getAttribute("autocomplete").equalsIgnoreCase("true")) {
+                // Using autocomplete on splittable input makes no sense
                 jobInput.setAutoComplete(true);
             }
 
