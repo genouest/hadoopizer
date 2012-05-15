@@ -239,13 +239,17 @@ public class Hadoopizer {
      * @param jobConf 
      */
     private static void setHadoopOptions(JobConfig config, Configuration jobConf) {
+        
+        // First define some default settings
+        Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + "temp_header_file.txt");
+        jobConf.set("hadoopizer.temp.header.file", cacheDir.toString()); // TODO document this
+        jobConf.set("mapred.compress.map.output", "true"); // TODO should it be set by default? and does it work?
+        jobConf.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.GzipCodec"); // FIXME how to choose the good codec?
+        
+        // Then load other options from job file (overriding if needed)
         for (Map.Entry<String, String> e : config.getHadoopConfig().entrySet()) {
             jobConf.set(e.getKey(), e.getValue());
         }
-
-        // TODO move this elsewhere?
-        Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + "temp_header_file.txt");
-        jobConf.set("hadoopizer.temp.header.file", cacheDir.toString()); // TODO document this
     }
     
     // TODO distributed cache can also be used to distribute software
