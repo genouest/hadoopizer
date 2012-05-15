@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+    <xs:element name="job">
+        <xs:complexType>
+            <xs:all>
+                <xs:element name="command" type="xs:string"/>
+                <xs:element ref="input" minOccurs="1" maxOccurs="unbounded"/>
+                <xs:element ref="output"/>
+                <xs:element ref="hadoop" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="input">
+        <xs:complexType>
+            <xs:all>
+                <xs:attribute name="id" type="xs:ID" use="required"/>
+                
+                <xs:element name="splitter" type="xs:string"/>
+                <xs:element name="url" type="xs:string">
+                    <xs:attribute name="autocomplete" type="xs:boolean"/>
+                </xs:element>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="output">
+        <xs:complexType>
+            <xs:all>
+                <xs:attribute name="id" type="xs:ID" use="required"/>
+                
+                <xs:element name="reducer" type="xs:string"/>
+                <xs:element name="compressor" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="url" type="xs:string"/>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="hadoop">
+        <xs:complexType>
+            <xs:all>
+                <xs:element name="config" type="xs:string">
+                    <xs:attribute name="key" type="xs:string"/>
+                </xs:element>
+            </xs:all>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

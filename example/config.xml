@@ -6,7 +6,6 @@
     
     <input id="q"><!-- only one allowed -->
         <splitter>fasta</splitter>
-        <unzip>true/false</unzip> <!-- if true, will unzip the file after upload, but what if no upload? -->
         
         <!-- s3n, local, ... = only one url per input -->
         <url>/local/foo/bar/myfile.fasta</url>
@@ -18,7 +17,6 @@
 
     <input id="db">
         <splitter>none</splitter><!-- means reference? or specific tag? -->
-        <unzip>true/false</unzip> <!-- if true, will unzip the file after upload, but what if no upload? -->
     
         <!-- s3n, local, ... = only one url per input -->
         <url autocomplete="true">/local/foo/bar/myfile</url> <!-- 2 cases here: on nfs (need to be uploaded with -files option) or not (no need to upload) -->

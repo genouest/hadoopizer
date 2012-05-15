@@ -9,6 +9,7 @@
                 <attribute name="Class-Path" value=". hadoopizer_latest_lib/hadoop-core-1.0.2.jar hadoopizer_latest_lib/commons-logging-1.1.1.jar hadoopizer_latest_lib/commons-configuration-1.6.jar hadoopizer_latest_lib/commons-lang-2.4.jar hadoopizer_latest_lib/jackson-core-asl-1.8.8.jar hadoopizer_latest_lib/jackson-mapper-asl-1.8.8.jar hadoopizer_latest_lib/common-codec.jar hadoopizer_latest_lib/common-compress.jar hadoopizer_latest_lib/commons-cli.jar"/>
             </manifest>
             <fileset dir="/udd/abretaud/workspace/hadoopizer/bin"/>
+            <fileset dir="/udd/abretaud/workspace/hadoopizer" includes="resources/*"/>
             <metainf dir="/udd/abretaud/workspace/hadoopizer/META-INF"/>
         </jar>
         <delete dir="/udd/abretaud/hadoopizer_latest_lib"/>
