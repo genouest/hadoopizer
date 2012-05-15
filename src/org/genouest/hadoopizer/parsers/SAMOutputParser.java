@@ -46,7 +46,6 @@ public class SAMOutputParser implements OutputParser {
                 // This is a SAM header line: write it in a temp file to prepend to the output file
                 headerOut.write(trimmedLine.getBytes());
                 headerOut.write("\n".getBytes());
-                headerOut.flush();
                 continue;
             }
 
