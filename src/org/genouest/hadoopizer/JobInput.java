@@ -72,27 +72,32 @@ public class JobInput {
 
         HashSet<URI> urls = new HashSet<URI>();
 
-        Path basePath = new Path(url);
-        String filePrefix = basePath.getName();
-
-        try {
-            FileSystem fs = basePath.getFileSystem(jobConf);
-            
-            if (!fs.exists(basePath.getParent())) {
-                throw new IOException("Input directory not found: " + url);
-            }
+        if (isAutoComplete()) {
+            urls.add(url);
+        }
+        else {
+            Path basePath = new Path(url);
+            String filePrefix = basePath.getName();
+    
+            try {
+                FileSystem fs = basePath.getFileSystem(jobConf);
                 
-            FileStatus[] stats = fs.listStatus(basePath.getParent());
-             
-            for (int i = 0; i < stats.length; i++) {
-                Path path = stats[i].getPath();
-                if (fs.isFile(path) && path.getName().startsWith(filePrefix))
-                    urls.add(path.toUri());
+                if (!fs.exists(basePath.getParent())) {
+                    throw new IOException("Input directory not found: " + url);
+                }
+                    
+                FileStatus[] stats = fs.listStatus(basePath.getParent());
+                 
+                for (int i = 0; i < stats.length; i++) {
+                    Path path = stats[i].getPath();
+                    if (fs.isFile(path) && path.getName().startsWith(filePrefix))
+                        urls.add(path.toUri());
+                }
+            } catch (IOException e) {
+                System.err.println("Unable to autocomplete input file");
+                e.printStackTrace();
+                System.exit(1);
             }
-        } catch (IOException e) {
-            System.err.println("Unable to autocomplete input file");
-            e.printStackTrace();
-            System.exit(1);
         }
 
         return urls;

@@ -187,15 +187,9 @@ public class Hadoopizer {
             Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir"));
             Path hdfsBasePath = new Path(cacheDir.toString() + Path.SEPARATOR + jobInput.getId() + Path.SEPARATOR);
 
-            if (jobInput.isAutoComplete()) {
-                // We need to add to distributed cache all files with given prefix
-                for (URI url : jobInput.getAllUrls(jobConf)) {
-                    addToDistributedCache(jobInput.getId(), url, hdfsBasePath, jobConf);
-                }
-            }
-            else {
-                // No auto complete, simply add the given file to the distributed cache
-                addToDistributedCache(jobInput.getId(), jobInput.getUrl(), hdfsBasePath, jobConf);
+            // We need to add to distributed cache static file(s)
+            for (URI url : jobInput.getAllUrls(jobConf)) {
+                addToDistributedCache(jobInput.getId(), url, hdfsBasePath, jobConf);
             }
         }
 
