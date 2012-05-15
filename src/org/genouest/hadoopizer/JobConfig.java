@@ -97,6 +97,8 @@ public class JobConfig {
      */
     public boolean validateXml(InputStream configContent) {
         
+        // TODO find a way to embed the java.endorsed.dirs definition in the jar, if possible. For the moment, we need to launch with -Djava.endorsed.dirs=lib/endorsed
+        
         StreamSource[] schemaDocuments = new StreamSource[] {new StreamSource("resources/jobconfig.xsd")};
         Source instanceDocument = new StreamSource(configContent);
         

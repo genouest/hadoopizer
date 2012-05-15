@@ -6,7 +6,7 @@
         <jar destfile="/udd/abretaud/hadoopizer_latest.jar">
             <manifest>
                 <attribute name="Main-Class" value="org.genouest.hadoopizer.Hadoopizer"/>
-                <attribute name="Class-Path" value=". hadoopizer_latest_lib/hadoop-core-1.0.2.jar hadoopizer_latest_lib/commons-logging-1.1.1.jar hadoopizer_latest_lib/commons-configuration-1.6.jar hadoopizer_latest_lib/commons-lang-2.4.jar hadoopizer_latest_lib/jackson-core-asl-1.8.8.jar hadoopizer_latest_lib/jackson-mapper-asl-1.8.8.jar hadoopizer_latest_lib/common-codec.jar hadoopizer_latest_lib/common-compress.jar hadoopizer_latest_lib/commons-cli.jar"/>
+                <attribute name="Class-Path" value=". hadoopizer_latest_lib/*.jar hadoopizer_latest_lib/endorsed/*.jar"/>
             </manifest>
             <fileset dir="/udd/abretaud/workspace/hadoopizer/bin"/>
             <fileset dir="/udd/abretaud/workspace/hadoopizer" includes="resources/*"/>
@@ -23,5 +23,8 @@
         <copy file="/udd/abretaud/workspace/hadoopizer/lib/common-codec.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
         <copy file="/udd/abretaud/workspace/hadoopizer/lib/common-compress.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
         <copy file="/udd/abretaud/workspace/hadoopizer/lib/commons-cli.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
+        <copy todir="/udd/abretaud/hadoopizer_latest_lib">
+        	  <fileset dir="/udd/abretaud/workspace/hadoopizer/lib" includes="endorsed/*"/>
+        </copy>
     </target>
 </project>
