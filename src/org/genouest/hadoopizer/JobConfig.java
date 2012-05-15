@@ -276,7 +276,6 @@ public class JobConfig {
         Element urlElement = doc.createElement("url");
         inputElement.appendChild(urlElement);
         urlElement.appendChild(doc.createTextNode(splittableInput.getUrl().toString()));
-        // TODO can we use autocomplete for splittable input?
         if (splittableInput.isAutoComplete()) {
             urlElement.setAttribute("autocomplete", "true");
         }
