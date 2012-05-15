@@ -269,15 +269,17 @@ public class Hadoopizer {
             Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir"));
             URI cacheUri = cacheDir.toUri();
             if (!uri.getHost().equalsIgnoreCase(cacheUri.getHost())) {
-                // No transfer needed if on the same hdfs host
                 // TODO Otherwise, download then copy? or just keep it like that? Need to test this
             }
             else {
+                // No transfer needed if on the same hdfs host
                 hdfsPath = localPath;
             }
         }
         else {
-            // TODO stop everything, we don't know how to do!! support other protocols (s3? ssh? http? ftp?)
+            // TODO support other protocols (s3? ssh? http? ftp?)
+            System.err.println("Unsupported URI scheme: " + uri.getScheme() + " (in " + uri + ")");
+            System.exit(1);
         }
 
         // Add a fragment to the uri: hadoop will automatically create a symlink in the work dir pointing to this file
