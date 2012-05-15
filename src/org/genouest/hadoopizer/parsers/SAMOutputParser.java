@@ -54,7 +54,7 @@ public class SAMOutputParser implements OutputParser {
 
             if (tabPos != -1) {
 
-                outKey.set(line.substring(0, tabPos)); // TODO can it be a problem if multiple lines with same id (ie read mapping at several locations)?
+                outKey.set(line.substring(0, tabPos));
                 outValue.set(line.substring(tabPos + 1));
 
                 entriesParsed++;
