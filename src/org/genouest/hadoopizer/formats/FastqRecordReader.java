@@ -28,7 +28,7 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
     private long pos;
 
     private LineReader lineReader;
-    ArrayList<String> currentRecord = new ArrayList<String>();
+    private ArrayList<String> currentRecord = new ArrayList<String>();
 
     private Text recordKey = new Text();
     private Text recordValue = new Text();
