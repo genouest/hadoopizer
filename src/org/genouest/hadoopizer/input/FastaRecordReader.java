@@ -1,7 +1,6 @@
-package org.genouest.hadoopizer.formats;
+package org.genouest.hadoopizer.input;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -15,28 +14,24 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.LineReader;
-import org.genouest.hadoopizer.Hadoopizer;
 
 /**
- * Inspired by org.apache.hadoop.util.LineReader
- *
+ * Inspired by org.apache.hadoop.mapreduce.lib.input.LineRecordReader
  */
-public class FastqRecordReader extends RecordReader<Text, Text> {
+public class FastaRecordReader extends RecordReader<Text, Text> {
 
     private long start;
     private long end;
     private long pos;
 
     private LineReader lineReader;
-    private ArrayList<String> currentRecord = new ArrayList<String>();
+    private String nextLine = "";
 
     private Text recordKey = new Text();
     private Text recordValue = new Text();
     
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
-
-        // TODO test support for compressed input (see org.apache.hadoop.mapreduce.lib.input.LineRecordReader)
 
         FileSplit fileSplit = (FileSplit) split;
         Configuration job = context.getConfiguration();
@@ -67,51 +62,42 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
         
         if (start != 0 && codec == null) { // Not the beginning of the whole file (impossible if compressed as there will only be 1 split)
             // Not at the beginning of the file, throw away the first (probably incomplete) line
-            shiftFastQRecord();
+            Text tmp = new Text("");
+            pos += lineReader.readLine(tmp);
         }
-    }
 
-    /**
-     * Reads 4 lines (=possibly a record) from the fastq file
-     * 
-     * @return a list of 4 strings from the fastq file
-     * @throws IOException 
-     */
-    public void findPotentialFastQRecord() throws IOException {
-        currentRecord.clear();
-        
+        // Read the first line
         Text newLine = new Text("");
         pos += lineReader.readLine(newLine);
         if (newLine != null)
-            currentRecord.add(newLine.toString());
+            nextLine = newLine.toString();
         
-        pos += lineReader.readLine(newLine);
-        if (newLine != null)
-            currentRecord.add(newLine.toString());
-        
-        pos += lineReader.readLine(newLine);
-        if (newLine != null)
-            currentRecord.add(newLine.toString());
-        
-        pos += lineReader.readLine(newLine);
-        if (newLine != null)
-            currentRecord.add(newLine.toString());
+        // Seek to the next fasta header (if we're not already positionned on a fasta header)
+        readUntilNextRecord();
     }
 
     /**
-     * Shifts the list fastq record of 1 line in the fastq file
+     * Reads the fasta file until the next fasta header
+     * When a fasta header is encountered, the corresponding line is placed in nextLine variable
      * 
-     * @return a list of 4 strings from the fastq file
+     * @return the full fasta content encountered before the next fasta header, without line breaks
      * @throws IOException 
      */
-    public void shiftFastQRecord() throws IOException {
-        if (!currentRecord.isEmpty())
-            currentRecord.remove(0);
-
+    public String readUntilNextRecord() throws IOException {
+        
+        String sequence = "";
         Text newLine = new Text("");
-        pos += lineReader.readLine(newLine);
-        if (newLine != null)
-            currentRecord.add(newLine.toString());
+
+        while (!nextLine.startsWith(">")) {
+            pos += lineReader.readLine(newLine);
+            if (newLine != null)
+                nextLine = newLine.toString();
+            
+            if (!nextLine.startsWith(">"))
+                sequence += nextLine;
+        }
+        
+        return sequence;
     }
     
     @Override
@@ -120,40 +106,17 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
         if (pos >= end) // Reached the end of split
             return false;
         
-        findPotentialFastQRecord();
-        
-        if (currentRecord.size() != 4)
-            return false;
-        
-        int tries = 0;
-        while (tries < 4) { // 4 lines in a record
-            if (currentRecord.get(0).startsWith("@") && currentRecord.get(2).startsWith("+") && (currentRecord.get(1).length() == currentRecord.get(3).length())) {
-                // This looks like a good FastQ record
-                // Construct the string
-                String record = "";
-                for (String line : currentRecord) {
-                    record += line+"\n";
-                }
-                
-                recordKey.set(currentRecord.get(0).substring(1));
-                recordValue.set(record);
-                
-                return true;
-            }
-            else {
-                shiftFastQRecord();
-                
-                if (currentRecord.size() != 4) {
-                    Hadoopizer.logger.info("Reached the end of fastq file while shifting lines");
-                    return false;
-                }
-                
-                tries++;
-            }
+        if (nextLine.startsWith(">")) {
+            
+            recordKey.set(nextLine.substring(1));
+            recordValue.set(readUntilNextRecord());
+            
+            return true;
         }
-        
-        // Error parsing fastq if we get there
-        throw new IOException("Failed to parse FastQ file");
+        else {
+            // Means we didn't call readUntilNextRecord before which is not supposed to happen
+            throw new IOException("Failed to parse Fasta file: couldn't find header in '" + nextLine + "'");
+        }
     }
 
     @Override

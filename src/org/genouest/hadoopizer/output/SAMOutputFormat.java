@@ -1,4 +1,4 @@
-package org.genouest.hadoopizer.formats;
+package org.genouest.hadoopizer.output;
 
 import java.io.DataOutputStream;
 import java.io.IOException;

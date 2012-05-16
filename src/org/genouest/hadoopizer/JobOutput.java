@@ -10,7 +10,7 @@ import org.apache.hadoop.io.compress.BZip2Codec;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.genouest.hadoopizer.formats.HadoopizerOutputFormat;
+import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 import org.genouest.hadoopizer.parsers.OutputParser;
 
 public class JobOutput {

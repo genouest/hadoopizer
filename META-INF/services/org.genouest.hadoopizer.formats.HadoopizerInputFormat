@@ -1,1 +1,2 @@
-org.genouest.hadoopizer.formats.FastqInputFormat
+org.genouest.hadoopizer.input.FastqInputFormat
+org.genouest.hadoopizer.input.FastaInputFormat

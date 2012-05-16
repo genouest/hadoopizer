@@ -1,4 +1,4 @@
-package org.genouest.hadoopizer.formats;
+package org.genouest.hadoopizer.input;
 
 public interface HadoopizerInputFormat { 
     
