@@ -207,7 +207,7 @@ public class Hadoopizer {
         DistributedCache.createSymlink(jobConf);
 
         // Create the job and its name
-        Job job = new Job(jobConf, "Hadoopizer job"); // TODO find a better name (config?)
+        Job job = new Job(jobConf, "Hadoopizer job"); // TODO find a better name (config? binary name?)
 
         job.setJarByClass(Hadoopizer.class);
         
