@@ -51,30 +51,13 @@ public class JobConfig {
         staticInputs = new HashSet<JobInput>();
         hadoopConfig = new HashMap<String, String>();
     }
-    
+
     /**
-     * @param configFile
+     * Validates an XML config file using an xml schema
+     * Requires the latest xalan.jar xercesImpl.jar and xml-apis.jar (implementing XML Schema v1.1) in the java.endorsed.dirs
+     * 
+     * @param configFile a config file to validate
      * @throws FileNotFoundException
-     */
-    public void load(File configFile) throws FileNotFoundException {
-
-        FileInputStream fis = new FileInputStream(configFile);
-        load(fis);
-    }
-
-    /**
-     * @param configContent
-     */
-    public void load(String configContent) {
-
-        InputStream is = new ByteArrayInputStream(configContent.getBytes());
-        load(is);
-    }
-
-    /**
-     * @param configFile
-     * @throws FileNotFoundException
-     * @throws  
      */
     public boolean validateXml(File configFile) throws FileNotFoundException {
 
@@ -120,7 +103,32 @@ public class JobConfig {
     }
     
     /**
-     * @param configContent
+     * Load the job configuration from an xml file
+     * 
+     * @param configFile the xml file to load
+     * @throws FileNotFoundException
+     */
+    public void load(File configFile) throws FileNotFoundException {
+
+        FileInputStream fis = new FileInputStream(configFile);
+        load(fis);
+    }
+
+    /**
+     * Load the job configuration from an xml String
+     * 
+     * @param configContent the xml String
+     */
+    public void load(String configContent) {
+
+        InputStream is = new ByteArrayInputStream(configContent.getBytes());
+        load(is);
+    }
+    
+    /**
+     * Load the job configuration from an InputStream
+     * 
+     * @param configContent an InputStream object containing XML data
      */
     public void load(InputStream configContent) {
         
@@ -274,7 +282,9 @@ public class JobConfig {
     }
 
     /**
-     * @return
+     * Generate and XML representation of the current job config
+     * 
+     * @return an XML string representing the job config
      * @throws ParserConfigurationException
      */
     public String dumpXml() throws ParserConfigurationException {
@@ -392,7 +402,9 @@ public class JobConfig {
     }
 
     /**
-     * @return the command
+     * Get the command line as written in the original xml file (variables are not replaced)
+     * 
+     * @return the command line
      */
     public String getRawCommand() {
 
@@ -400,7 +412,9 @@ public class JobConfig {
     }
 
     /**
-     * @return the command
+     * Get the command line with all variables replaced by local path, ready to execute on the corresponding node
+     * 
+     * @return the command, ready to execute
      */
     public String getFinalCommand() {
 
@@ -427,29 +441,37 @@ public class JobConfig {
     }
 
     /**
-     * @return
+     * Get the list of JobInput object representing static input files used (but not modified) by the job
+     * 
+     * @return a Set of JobInput objects
      */
     public HashSet<JobInput> getStaticInputs() {
         return staticInputs;
     }
 
     /**
-     * @return
+     * Get the JobOutput object representing the output file of the job
+     * 
+     * @return a JobOutput object
      */
     public JobOutput getJobOutput() {
         return jobOutput;
     }
 
     /**
-     * @return
+     * Get the JobInput object representing the input file of the job which will be splitted by the hadoop framework
+     * 
+     * @return a JobInput object
      */
     public JobInput getSplittableInput() {
         return splittableInput;
     }
 
     /**
-     * @param id
-     * @param path
+     * Associate a local, node-specific path to a static input file
+     * 
+     * @param id the id of the static input file
+     * @param path the node-specific path to the file
      */
     public void setStaticInputLocalPath(String id, String path) {
 
@@ -470,6 +492,8 @@ public class JobConfig {
     }
 
     /**
+     * Get the list of hadoop config key/value pairs
+     * 
      * @return the hadoopConfig
      */
     public HashMap<String, String> getHadoopConfig() {
@@ -477,6 +501,8 @@ public class JobConfig {
     }
 
     /**
+     * Set the list of hadoop config key/value pairs
+     * 
      * @param hadoopConfig the hadoopConfig to set
      */
     public void setHadoopConfig(HashMap<String, String> hadoopConfig) {
