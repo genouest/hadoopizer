@@ -11,10 +11,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.RecordReader;
 import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.JobConfig;
+import org.genouest.hadoopizer.input.FastaInputFormat;
 import org.genouest.hadoopizer.parsers.OutputParser;
 
 public class GenericMapper extends Mapper<Text, Text, Text, Text> { 
@@ -129,6 +134,17 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         context.setStatus("Parsing command output with " + config.getJobOutput().getReducer() + " parser");
         OutputParser parser = config.getJobOutput().getOutputParser();
         parser.parse(outputFile, context);
+        
+        // FIXME begin test reusing inputformat
+        FastaInputFormat inf = new FastaInputFormat();
+        InputSplit split = new FileSplit(new Path(outputFile.toURI()), 0, outputFile.length(), null);
+        RecordReader<Text, Text> reader = inf.createRecordReader(split, context);
+        reader.initialize(split, context);
+        while (reader.nextKeyValue()) {
+            context.write(reader.getCurrentKey(), reader.getCurrentValue());
+        }
+        reader.close();
+        // FIXME end test reusing inputformat
 
         // Remove temporary output files
         if (!outputFile.delete())

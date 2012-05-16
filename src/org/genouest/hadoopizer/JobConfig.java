@@ -179,7 +179,7 @@ public class JobConfig {
             JobInput jobInput = new JobInput(input.getAttribute("id"));
             boolean isSplittable = input.getElementsByTagName("splitter").item(0).getTextContent().equalsIgnoreCase("none");
             if (!isSplittable) {
-                jobInput.setSplitter(input.getElementsByTagName("splitter").item(0).getTextContent());
+                jobInput.setSplitterId(input.getElementsByTagName("splitter").item(0).getTextContent());
             }
 
             String url = input.getElementsByTagName("url").item(0).getTextContent();
@@ -201,7 +201,7 @@ public class JobConfig {
             }
 
             if (jobInput.hasSplitter()) {
-                Hadoopizer.logger.info("Using splitter '"+jobInput.getSplitter()+"' for input '"+jobInput.getId()+"' ("+jobInput.getUrl()+")");
+                Hadoopizer.logger.info("Using splitter '"+jobInput.getSplitterId()+"' for input '"+jobInput.getId()+"' ("+jobInput.getUrl()+")");
                 splittableInput = jobInput;
             }
             else {
@@ -308,7 +308,7 @@ public class JobConfig {
 
             Element splitter = doc.createElement("splitter");
             if (input.hasSplitter()) {
-                splitter.appendChild(doc.createTextNode(input.getSplitter()));
+                splitter.appendChild(doc.createTextNode(input.getSplitterId()));
             }
             else {
                 splitter.appendChild(doc.createTextNode("none"));
@@ -330,7 +330,7 @@ public class JobConfig {
 
         if (splittableInput.hasSplitter()) {
             Element splitter = doc.createElement("splitter");
-            splitter.appendChild(doc.createTextNode(splittableInput.getSplitter()));
+            splitter.appendChild(doc.createTextNode(splittableInput.getSplitterId()));
             inputElement.appendChild(splitter);
         }
 

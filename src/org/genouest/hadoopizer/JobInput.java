@@ -17,7 +17,7 @@ public class JobInput {
 
     private String id;
     private URI url;
-    private String splitter;
+    private String splitterId;
     private String localPath;
     private boolean autoComplete = false;
 
@@ -26,27 +26,8 @@ public class JobInput {
     }
 
     /**
-     * @return true if there is a splitter associated to this input
-     */
-    public boolean hasSplitter() {
-        return (splitter != null && !splitter.isEmpty());
-    }
-
-    /**
-     * @return the splitter
-     */
-    public String getSplitter() {
-        return splitter;
-    }
-
-    /**
-     * @param splitter the splitter to set
-     */
-    public void setSplitter(String splitter) {
-        this.splitter = splitter;
-    }
-
-    /**
+     * Get the id of this job input as declared in the xml config file
+     * 
      * @return the id
      */
     public String getId() {
@@ -54,10 +35,93 @@ public class JobInput {
     }
 
     /**
+     * @return true if there is a splitter associated to this input
+     */
+    public boolean hasSplitter() {
+        return (splitterId != null && !splitterId.isEmpty());
+    }
+
+    /**
+     * Get the splitter id
+     * 
+     * @return the splitter id
+     */
+    public String getSplitterId() {
+        return splitterId;
+    }
+
+    /**
+     * Set the splitter id
+     * 
+     * @param splitter the splitter id to set
+     */
+    public void setSplitterId(String splitter) {
+        this.splitterId = splitter;
+    }
+
+    /**
+     * Get the url where the input data can be found, as declared in the config
+     * 
      * @return the url
      */
     public URI getUrl() {
         return url;
+    }
+
+    /**
+     * Set the url where the input data can be found, as declared in the config
+     * 
+     * @param url the url to set
+     */
+    public void setUrl(URI url) {
+        this.url = url;
+    }
+
+    /**
+     * Get the path to the local, node-specific file containing the input data
+     * 
+     * @return the localPath
+     */
+    public String getLocalPath() {
+        return localPath;
+    }
+
+    /**
+     * Set the path to the local, node-specific file containing the input data
+     * 
+     * @param localPath the localPath to set
+     */
+    public void setLocalPath(String localPath) {
+        if (isAutoComplete()) {
+            // In the config, the url looks like: /the/local/path/filenameprefix
+            // We receive something like: /some/path/static_input__someid__filenameprefix.txt
+            // We want to keep: /some/path/static_input__someid__filenameprefix
+            Path local = new Path(localPath);
+            Path source = new Path(url);
+            int posMiddle = local.getName().lastIndexOf(source.getName());
+            String prefix = local.getName().substring(0, posMiddle);
+            this.localPath = local.getParent().toString() + Path.SEPARATOR + prefix + source.getName();
+        }
+        else
+            this.localPath = localPath;
+    }
+
+    /**
+     * Does this JobInput represent a single input file, or a set of input files with the same prefix?
+     * 
+     * @return true if it is a set of file, false if it's a single one
+     */
+    public boolean isAutoComplete() {
+        return autoComplete;
+    }
+
+    /**
+     * Set the wether this JobInput represent a single input file, or a set of input files with the same prefix
+     * 
+     * @param autoComplete true if the file is a set of files, false otherwise
+     */
+    public void setAutoComplete(boolean autoComplete) {
+        this.autoComplete = autoComplete;
     }
 
     /**
@@ -104,55 +168,9 @@ public class JobInput {
     }
 
     /**
-     * @param url the url to set
-     */
-    public void setUrl(URI url) {
-        this.url = url;
-    }
-
-    /**
-     * @return the localPath
-     */
-    public String getLocalPath() {
-        return localPath;
-    }
-
-    /**
-     * @param localPath the localPath to set
-     */
-    public void setLocalPath(String localPath) {
-        if (isAutoComplete()) {
-            // In the config, the url looks like: /the/local/path/filenameprefix
-            // We receive something like: /some/path/static_input__someid__filenameprefix.txt
-            // We want to keep: /some/path/static_input__someid__filenameprefix
-            Path local = new Path(localPath);
-            Path source = new Path(url);
-            int posMiddle = local.getName().lastIndexOf(source.getName());
-            String prefix = local.getName().substring(0, posMiddle);
-            this.localPath = local.getParent().toString() + Path.SEPARATOR + prefix + source.getName();
-        }
-        else
-            this.localPath = localPath;
-    }
-
-    /**
-     * @return the autoComplete
-     */
-    public boolean isAutoComplete() {
-        return autoComplete;
-    }
-
-    /**
-     * @param autoComplete the autoComplete to set
-     */
-    public void setAutoComplete(boolean autoComplete) {
-        this.autoComplete = autoComplete;
-    }
-
-    /**
-     * Get an FileInputFormat able to split the splittable input
+     * Get a FileInputFormat instance able to split the splittable input
      * 
-     * @return an FileInputFormat corresponding to the splitter defined for this JobInput
+     * @return an FileInputFormat corresponding to the splitter id defined for this JobInput
      */
     public FileInputFormat<?, ?> getFileInputFormat() {
         HadoopizerInputFormat inputFormat = null;
@@ -161,10 +179,10 @@ public class JobInput {
         Iterator<HadoopizerInputFormat> iterator = serviceLoader.iterator();
         while (iterator.hasNext()) {
             inputFormat = iterator.next();
-            if (inputFormat.getId().equalsIgnoreCase(getSplitter()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
+            if (inputFormat.getId().equalsIgnoreCase(getSplitterId()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
                 return (FileInputFormat<?, ?>) inputFormat;
         }
         
-        throw new RuntimeException("Could not find a suitable InputFormat service for id '" + getSplitter() + "'");
+        throw new RuntimeException("Could not find a suitable InputFormat service for id '" + getSplitterId() + "'");
     }
 }
