@@ -12,7 +12,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 
-public class FastaInputFormat extends FileInputFormat<Text, Text> implements HadoopizerInputFormat {
+public class FastaInputFormat extends FileInputFormat<Text, Text> implements HadoopizerInputFormat { // TODO test this
 
     @Override
     public RecordReader<Text, Text> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
