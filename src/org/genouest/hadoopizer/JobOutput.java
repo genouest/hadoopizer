@@ -17,11 +17,14 @@ public class JobOutput {
 
     private String id;
     private URI url;
-    private String reducer;
+    private String reducerId;
     private boolean sequenceOutput = false;
     private String localPath = "";
     private String compressor;
     
+    /**
+     * List of allowed compression codecs
+     */
     private static final HashMap<String, Class<? extends CompressionCodec>> allowedCodecs = new HashMap<String, Class<? extends CompressionCodec>>();
     static {
         allowedCodecs.put("gzip", GzipCodec.class);
@@ -33,20 +36,8 @@ public class JobOutput {
     }
 
     /**
-     * @return the reducer
-     */
-    public String getReducer() {
-        return reducer;
-    }
-
-    /**
-     * @param reducer the reducer to set
-     */
-    public void setReducer(String reducer) {
-        this.reducer = reducer;
-    }
-
-    /**
+     * Get the id of this job output as declared in the xml config file
+     * 
      * @return the id
      */
     public String getId() {
@@ -54,6 +45,26 @@ public class JobOutput {
     }
 
     /**
+     * Get the reducer id
+     * 
+     * @return the reducerId
+     */
+    public String getReducer() {
+        return reducerId;
+    }
+
+    /**
+     * Set the reducer id
+     * 
+     * @param reducerId the reducerId to set
+     */
+    public void setReducer(String reducer) {
+        this.reducerId = reducer;
+    }
+
+    /**
+     * Get the url where the output data will be saved, as declared in the config
+     * 
      * @return the url
      */
     public URI getUrl() {
@@ -61,6 +72,8 @@ public class JobOutput {
     }
 
     /**
+     * Set the url where the output data will be saved, as declared in the config
+     * 
      * @param url the url to set
      */
     public void setUrl(URI url) {
@@ -68,6 +81,8 @@ public class JobOutput {
     }
 
     /**
+     * Get the path to the local, node-specific output file
+     * 
      * @return the localPath
      */
     public String getLocalPath() {
@@ -75,6 +90,8 @@ public class JobOutput {
     }
 
     /**
+     * Set the path to the local, node-specific output file
+     * 
      * @param localPath the localPath to set
      */
     public void setLocalPath(String localPath) {
@@ -82,13 +99,18 @@ public class JobOutput {
     }
 
     /**
+     * TODO document
+     * 
      * @return the sequenceOutput
      */
     public boolean isSequenceOutput() {
+        // TODO implement saving as sequencefile
         return sequenceOutput;
     }
 
     /**
+     * TODO document
+     * 
      * @param sequenceOutput the sequenceOutput to set
      */
     public void setSequenceOutput(boolean sequenceOutput) {
@@ -98,7 +120,7 @@ public class JobOutput {
     /**
      * Get an FileOutputFormat able to merge the output
      * 
-     * @return an FileOutputFormat corresponding to the reducer defined for this JobOutput
+     * @return an FileOutputFormat corresponding to the reducerId defined for this JobOutput
      */
     public FileOutputFormat<?, ?> getFileOutputFormat() {
         HadoopizerOutputFormat outputFormat = null;
@@ -118,7 +140,7 @@ public class JobOutput {
     /**
      * Get an OutputParser able to split the command output in key/values
      * 
-     * @return an OutputParser corresponding to the reducer defined for this JobOutput
+     * @return an OutputParser corresponding to the reducerId defined for this JobOutput
      */
     public OutputParser getOutputParser() {
         OutputParser outputParser = null;
@@ -135,6 +157,8 @@ public class JobOutput {
     }
 
     /**
+     * Get the name of the compressor to use
+     * 
      * @return The name of the compressor to use
      */
     public String getCompressorName() {
@@ -142,7 +166,9 @@ public class JobOutput {
     }
     
     /**
-     * @return the compressor
+     * Get the compressor class
+     * 
+     * @return the compressor class
      */
     public Class<? extends CompressionCodec> getCompressor() {
         if (allowedCodecs.containsKey(compressor))
@@ -152,6 +178,8 @@ public class JobOutput {
     }
 
     /**
+     * Set the name of the compressor to use
+     * 
      * @param compressor the compressor to set
      */
     public void setCompressor(String compressor) {
@@ -159,6 +187,8 @@ public class JobOutput {
     }
 
     /**
+     * Is there a compressor for this output
+     * 
      * @return true if a compressor is set
      */
     public boolean hasCompressor() {
@@ -166,12 +196,19 @@ public class JobOutput {
     }
     
     /**
+     * Is the given compressor name is supported
+     * 
      * @return true if given compressor name is supported
      */
     public static boolean isCompressorSupported(String compressor) {
         return allowedCodecs.containsKey(compressor);
     }
 
+    /**
+     * Get a list of supported compressors
+     * 
+     * @return a comma separated list of supported compressors
+     */
     public static String getSupportedCompressor() {
         String sup = "";
         
