@@ -177,8 +177,8 @@ public class JobConfig {
             Element input = (Element) inputs.item(i);
 
             JobInput jobInput = new JobInput(input.getAttribute("id"));
-            boolean isSplittable = input.getElementsByTagName("splitter").item(0).getTextContent().equalsIgnoreCase("none");
-            if (!isSplittable) {
+            boolean isSplittable = !input.getElementsByTagName("splitter").item(0).getTextContent().equalsIgnoreCase("none");
+            if (isSplittable) {
                 jobInput.setSplitterId(input.getElementsByTagName("splitter").item(0).getTextContent());
             }
 
@@ -194,11 +194,7 @@ public class JobConfig {
             }
 
             Element urlEl = (Element) input.getElementsByTagName("url").item(0);
-
-            if (!isSplittable && urlEl.hasAttribute("autocomplete") && urlEl.getAttribute("autocomplete").equalsIgnoreCase("true")) {
-                // Using autocomplete on splittable input makes no sense
-                jobInput.setAutoComplete(true);
-            }
+            jobInput.setAutoComplete(!isSplittable && urlEl.hasAttribute("autocomplete") && urlEl.getAttribute("autocomplete").equalsIgnoreCase("true"));
 
             if (jobInput.hasSplitter()) {
                 Hadoopizer.logger.info("Using splitter '"+jobInput.getSplitterId()+"' for input '"+jobInput.getId()+"' ("+jobInput.getUrl()+")");

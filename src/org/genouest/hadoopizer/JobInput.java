@@ -136,7 +136,7 @@ public class JobInput {
 
         HashSet<URI> urls = new HashSet<URI>();
 
-        if (isAutoComplete()) {
+        if (!isAutoComplete()) {
             urls.add(url);
         }
         else {
