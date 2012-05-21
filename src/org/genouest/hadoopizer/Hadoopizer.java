@@ -10,7 +10,6 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -28,94 +27,37 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.genouest.hadoopizer.mappers.GenericMapper;
-import org.xml.sax.SAXException;
 
 public class Hadoopizer {
 
-    public static final Logger logger = Logger.getLogger("Hadoopizer");
+    public static final Logger logger = Logger.getLogger("Hadoopizer"); // Logger
+    private static final String VERSION = "1.0"; // Version number of Hadoopizer
 
-    private static final String VERSION = "1.0";
-
+    private Configuration jobConf = new Configuration(); // Hadoop configuration object
+    private JobConfig config = new JobConfig(); // Hadoopizer configuration object
+    private CommandLine cmdLine; // Command line args
+    
     /**
      * @param args command line arguments
-     * @throws IOException 
-     * @throws SAXException 
-     * @throws ParserConfigurationException 
-     * @throws XPathExpressionException 
+     * @throws IOException
      */
     public static void main(String[] args) throws IOException {
 
-        Configuration jobConf = new Configuration();
-
-        args = new GenericOptionsParser(jobConf, args).getRemainingArgs();
+        Hadoopizer app = new Hadoopizer();
         
-        Options options = new Options();
-        options.addOption("c", "config", true, "Path to a XML file describing the command to run");
-        options.addOption("w", "work-dir", true, "HDFS url where temporary files will be placed. The directory must not already exist");
-        options.addOption("h", "help", false, "Display help");
-        options.addOption("v", "version", false, "Display version information");
-        
-        CommandLineParser parser = new GnuParser();
-        CommandLine cmdLine = null;
-        try {
-            cmdLine = parser.parse(options, args);
-        } catch (ParseException e) {
-            System.err.println("Error parsing options");
-            e.printStackTrace();
-            help(options);
-            System.exit(1);
-        }
-        
-        if (cmdLine.hasOption("v"))
-            version();
+        // Load command line args + xml config
+        app.loadConfig(args);
 
-        if (cmdLine.hasOption("h") || !cmdLine.hasOption("c") || !cmdLine.hasOption("w"))
-            help(options);
-
-        // Load job config file
-        File configFile = new File(cmdLine.getOptionValue("c"));
-        logger.info("Reading config file: "+configFile.getAbsolutePath());
-
-        if (!configFile.isFile()) {
-            System.err.println("Couldn't read configuration file");
-            System.exit(1);
-        }
-
-        JobConfig config = new JobConfig();
+        // Load hadoop specific options
+        app.setHadoopOptions();
         
-        // Try to validate the xml
-        /*try {
-            config.validateXml(configFile);
-        } catch (FileNotFoundException e) {
-            System.err.println("Couldn't read configuration file");
-            e.printStackTrace();
-            System.exit(1);
-        }*/
-        
-        // The xml looks ok, try to load it
-        try {
-            config.load(configFile);
-        } catch (FileNotFoundException e) {
-            System.err.println("Couldn't read configuration file");
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        logger.info("Will execute the following command: " + config.getRawCommand());
-        
-        String hdfsWorkDir = cmdLine.getOptionValue("w");
-        if (!hdfsWorkDir.endsWith(Path.SEPARATOR))
-            hdfsWorkDir += Path.SEPARATOR;
-        jobConf.set("hadoopizer.hdfs.tmp.dir", hdfsWorkDir);
-        
-        checkDirs(config, jobConf);
-
-        setHadoopOptions(config, jobConf);
+        // Check temp and output dir presence
+        app.checkDirs();
         
         // Prepare a hadoop job
         boolean success = false; 
         try {
-            Job job = prepareJob(config, jobConf);
+            Job job = app.prepareJob();
             success = job.waitForCompletion(true);
         } catch (IOException e) {
             System.err.println("Failed launching hadoop job");
@@ -137,7 +79,120 @@ public class Hadoopizer {
         }
     }
     
-    private static void checkDirs(JobConfig config, Configuration jobConf) {
+    /**
+     * Parse the command line arguments and load data from xml config file
+     * 
+     * @param args command line arguments
+     * @throws IOException 
+     */
+    private void loadConfig(String[] args) throws IOException {
+
+        // Parse hadoop specific args
+        args = new GenericOptionsParser(jobConf, args).getRemainingArgs();
+        
+        // Define our options
+        Options options = new Options();
+        options.addOption("c", "config", true, "Path to a XML file describing the command to run");
+        options.addOption("w", "work-dir", true, "HDFS url where temporary files will be placed. The directory must not already exist");
+        options.addOption("b", "binaries", true, "Archive containing the binaries to execute. The archive is unzipped on each node in a 'binaries' directory in the work dir."); // TODO document location on nodes
+        options.addOption("h", "help", false, "Display help");
+        options.addOption("v", "version", false, "Display version information");
+        
+        // Parse our options
+        CommandLineParser parser = new GnuParser();
+        try {
+            cmdLine = parser.parse(options, args);
+        } catch (ParseException e) {
+            System.err.println("Error parsing options");
+            e.printStackTrace();
+            help(options);
+            System.exit(1);
+        }
+        
+        // Version and help options
+        if (cmdLine.hasOption("v"))
+            version();
+
+        if (cmdLine.hasOption("h") || !cmdLine.hasOption("c") || !cmdLine.hasOption("w"))
+            help(options);
+
+        // Load job config file from xml file
+        File configFile = new File(cmdLine.getOptionValue("c"));
+        if (!configFile.isFile()) {
+            System.err.println("Could not read the configuration file: "+configFile.getAbsolutePath());
+            System.exit(1);
+        }
+        logger.info("Reading config file: "+configFile.getAbsolutePath());
+        
+        // Try to validate the xml
+        /*try {
+            config.validateXml(configFile);
+        } catch (FileNotFoundException e) {
+            System.err.println("Couldn't read configuration file");
+            e.printStackTrace();
+            System.exit(1);
+        }*/
+        
+        // The xml looks ok, try to load it
+        try {
+            config.load(configFile);
+        } catch (FileNotFoundException e) {
+            System.err.println("Could not read the configuration file: "+configFile.getAbsolutePath());
+            e.printStackTrace();
+            System.exit(1);
+        }
+        
+        // Define the HDFS work dir
+        String hdfsWorkDir = cmdLine.getOptionValue("w");
+        if (!hdfsWorkDir.endsWith(Path.SEPARATOR))
+            hdfsWorkDir += Path.SEPARATOR;
+        jobConf.set("hadoopizer.hdfs.tmp.dir", hdfsWorkDir);
+    }
+
+    /**
+     * Add binary archive given by command line argument (if any) to ditributed cache
+     * 
+     * @param optionValue
+     * @throws IOException 
+     */
+    private void loadBinaries() throws IOException {
+
+        if (!cmdLine.hasOption("b")) {
+            return;
+        }
+
+        String path = cmdLine.getOptionValue("b");
+        
+        File arch = new File(path);
+        if (!arch.exists() || !arch.isFile()) {
+            System.err.println("Could not find binaries (-b option): " + path);
+            System.exit(1);
+        }
+        
+        URI archUri = arch.toURI();
+        Path archPath = new Path(archUri);
+        
+        Path hdfsPath = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + Path.SEPARATOR + archPath.getName()); // FIXME name colision possible
+        FileSystem fs = hdfsPath.getFileSystem(jobConf);
+        
+        if (archUri.getScheme().equalsIgnoreCase("file")) {
+            fs.copyFromLocalFile(false, true, archPath, hdfsPath);
+        }
+        else {
+            // TODO compatibility with other protocols??
+        }
+        
+        URI hdfsUri = URI.create(hdfsPath.toString() + "#binaries");
+        DistributedCache.addCacheArchive(hdfsUri, jobConf); // TODO test this and see how it works
+        
+        // TODO unarchive on each node at job startup in work dir 
+    }
+
+    /**
+     * Check that hdfs work dir and the output dir are valid ones.
+     * Exit the application if it is not the case.
+     */
+    private void checkDirs() {
         Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir"));
         URI cacheUri = cacheDir.toUri();
         
@@ -179,31 +234,33 @@ public class Hadoopizer {
         }
     }
 
-    private static Job prepareJob(JobConfig config, Configuration jobConf) throws IOException {
+    /**
+     * Prepare a ready to use job object based on the config loaded from command line args
+     * and xml config file.
+     * 
+     * @return a job object ready for execution
+     * @throws IOException
+     */
+    private Job prepareJob() throws IOException {
 
         Path inputPath = new Path(config.getSplittableInput().getUrl());
         
-        // Set job config
-        try {
-            jobConf.set("hadoopizer.job.config", config.dumpXml());
-        } catch (ParserConfigurationException e) {
-            System.err.println("Failed dumping configuration to xml.");
-            e.printStackTrace();
-            System.exit(1);
-        }
-
         // Add static input files to distributed cache
         HashSet<JobInput> inputs = config.getStaticInputs();
         for (JobInput jobInput : inputs) {
             Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir"));
-            Path hdfsBasePath = new Path(cacheDir.toString() + Path.SEPARATOR + jobInput.getId() + Path.SEPARATOR);
+            Path hdfsBasePath = new Path(cacheDir.toString() + Path.SEPARATOR + "static_data" + Path.SEPARATOR + jobInput.getId() + Path.SEPARATOR);
 
             // We need to add to distributed cache static file(s)
             for (URI url : jobInput.getAllUrls(jobConf)) {
-                addToDistributedCache(jobInput.getId(), url, hdfsBasePath, jobConf);
+                addToDistributedCache(jobInput.getId(), url, hdfsBasePath);
             }
         }
+        
+        // If needed, put the binaries in the distributed cache
+        loadBinaries();
 
+        // Ensure the files placed in the distributed cache will have symlinks in the work dir
         DistributedCache.createSymlink(jobConf);
 
         // Create the job and its name
@@ -211,6 +268,7 @@ public class Hadoopizer {
 
         job.setJarByClass(Hadoopizer.class);
         
+        // Define input and output data format
         FileInputFormat<?, ?> iFormat = config.getSplittableInput().getFileInputFormat();
         job.setInputFormatClass(iFormat.getClass());
         
@@ -244,12 +302,18 @@ public class Hadoopizer {
     }
 
     /**
-     * Add the hadoop options defined in the job config file
-     * 
-     * @param config
-     * @param jobConf 
+     * Load the hadoop options defined in the job config file
      */
-    private static void setHadoopOptions(JobConfig config, Configuration jobConf) {
+    private void setHadoopOptions() {
+
+        // Add the job config
+        try {
+            jobConf.set("hadoopizer.job.config", config.dumpXml());
+        } catch (ParserConfigurationException e) {
+            System.err.println("Failed dumping configuration to xml.");
+            e.printStackTrace();
+            System.exit(1);
+        }
         
         // First define some default settings
         Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + "temp_header_file.txt");
@@ -263,13 +327,20 @@ public class Hadoopizer {
         }
     }
     
-    // TODO distributed cache can also be used to distribute software
-    private static void addToDistributedCache(String fileId, URI uri, Path hdfsBasePath, Configuration jobConf) throws IOException {
+    /**
+     * Add an input file to the distributed cache.
+     * It is possible to call this method with different uris for the same file id.
+     * 
+     * @param fileId the file id as defined in the xml config file
+     * @param uri the uri of the file to add to distributedcache
+     * @param hdfsBasePath HDFS base path were the file will be placed directly (no subdir will be created)
+     * @throws IOException
+     */
+    private void addToDistributedCache(String fileId, URI uri, Path hdfsBasePath) throws IOException {
         
         FileSystem fs = hdfsBasePath.getFileSystem(jobConf);
         Path localPath = new Path(uri);
         Path hdfsPath = new Path(hdfsBasePath.toString() + Path.SEPARATOR + localPath.getName());
-        
         
         if (uri.getScheme().equalsIgnoreCase("file")) {
             logger.info("Adding file '" + uri + "' to distributed cache (" + hdfsPath + ")");
@@ -299,6 +370,11 @@ public class Hadoopizer {
         DistributedCache.addCacheFile(hdfsUri, jobConf);
     }
     
+    /**
+     * Show usage information and exit
+     * 
+     * @param options options available for hadoopizer
+     */
     private static void help(Options options) {
 
         HelpFormatter formatter = new HelpFormatter();
@@ -306,6 +382,9 @@ public class Hadoopizer {
         System.exit(0);
     }
 
+    /**
+     * Display the version number and exit
+     */
     private static void version() {
 
         System.out.println("Hadoopizer " + VERSION);
