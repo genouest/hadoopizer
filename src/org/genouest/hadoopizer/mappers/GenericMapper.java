@@ -136,14 +136,14 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         parser.parse(outputFile, context);
         
         // FIXME begin test reusing inputformat
-        FastaInputFormat inf = new FastaInputFormat();
+        /*FastaInputFormat inf = new FastaInputFormat();
         InputSplit split = new FileSplit(new Path(outputFile.toURI()), 0, outputFile.length(), null);
         RecordReader<Text, Text> reader = inf.createRecordReader(split, context);
         reader.initialize(split, context);
         while (reader.nextKeyValue()) {
             context.write(reader.getCurrentKey(), reader.getCurrentValue());
         }
-        reader.close();
+        reader.close();*/
         // FIXME end test reusing inputformat
 
         // Remove temporary output files
