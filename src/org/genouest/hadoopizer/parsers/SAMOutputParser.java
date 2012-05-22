@@ -33,10 +33,15 @@ public class SAMOutputParser implements OutputParser {
         String headerFileName = conf.get("hadoopizer.temp.header.file");
         Path headerFile = new Path(headerFileName);
         FileSystem fs = headerFile.getFileSystem(conf);
-        boolean writeHeader = !fs.exists(headerFile); // FIXME risk of concurrent access?
+        boolean writeHeader = false;
         FSDataOutputStream headerOut = null;
-        if (writeHeader) {
-            headerOut = fs.create(headerFile, false);
+        if (!fs.exists(headerFile)) {
+            try {
+                headerOut = fs.create(headerFile, false);
+            } catch (IOException e) {
+                writeHeader = false;
+            }
+            writeHeader = true;
         }
         
         while ((line = samReader.readLine()) != null) {
