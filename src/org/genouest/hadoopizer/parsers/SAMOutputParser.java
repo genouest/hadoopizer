@@ -33,15 +33,13 @@ public class SAMOutputParser implements OutputParser {
         String headerFileName = conf.get("hadoopizer.temp.header.file");
         Path headerFile = new Path(headerFileName);
         FileSystem fs = headerFile.getFileSystem(conf);
-        boolean writeHeader = false;
         FSDataOutputStream headerOut = null;
         if (!fs.exists(headerFile)) {
             try {
                 headerOut = fs.create(headerFile, false);
             } catch (IOException e) {
-                writeHeader = false;
+                headerOut = null;
             }
-            writeHeader = true;
         }
         
         while ((line = samReader.readLine()) != null) {
@@ -50,10 +48,12 @@ public class SAMOutputParser implements OutputParser {
             if ("".equals(trimmedLine)) {
                 continue;
             }
-            else if (trimmedLine.startsWith("@") && writeHeader) {
-                // This is a SAM header line: write it in a temp file to prepend to the output file
-                headerOut.write(trimmedLine.getBytes());
-                headerOut.write("\n".getBytes());
+            else if (trimmedLine.startsWith("@")) {
+                if (headerOut != null) {
+                    // This is a SAM header line: write it in a temp file to prepend to the output file
+                    headerOut.write(trimmedLine.getBytes());
+                    headerOut.write("\n".getBytes());
+                }
                 continue;
             }
 
@@ -73,7 +73,7 @@ public class SAMOutputParser implements OutputParser {
         }
 
         samReader.close();
-        if (writeHeader) {
+        if (headerOut != null) {
             headerOut.close();
         }
 
