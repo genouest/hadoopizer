@@ -172,7 +172,7 @@ public class Hadoopizer {
         URI archUri = arch.toURI();
         Path archPath = new Path(archUri);
         
-        Path hdfsPath = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + Path.SEPARATOR + archPath.getName()); // FIXME name colision possible
+        Path hdfsPath = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + Path.SEPARATOR + "binaries" + Path.SEPARATOR + archPath.getName());
         FileSystem fs = hdfsPath.getFileSystem(jobConf);
         
         if (archUri.getScheme().equalsIgnoreCase("file")) {
@@ -183,9 +183,7 @@ public class Hadoopizer {
         }
         
         URI hdfsUri = URI.create(hdfsPath.toString() + "#binaries");
-        DistributedCache.addCacheArchive(hdfsUri, jobConf); // TODO test this and see how it works
-        
-        // TODO unarchive on each node at job startup in work dir 
+        DistributedCache.addCacheArchive(hdfsUri, jobConf);
     }
 
     /**
@@ -319,7 +317,7 @@ public class Hadoopizer {
         // First define some default settings
         Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + "temp_header_file.txt");
         jobConf.set("hadoopizer.temp.header.file", cacheDir.toString()); // TODO document this
-        //jobConf.set("mapred.compress.map.output", "true"); // TODO should it be set by default? and does it work?
+        jobConf.set("mapred.compress.map.output", "true"); // TODO should it be set by default? and does it work?
         //jobConf.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.GzipCodec"); // FIXME how to choose the good codec?
         
         // Then load other options from job file (overriding if needed)
