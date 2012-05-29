@@ -1,1 +1,3 @@
 org.genouest.hadoopizer.output.SAMOutputFormat
+org.genouest.hadoopizer.output.FastqOutputFormat
+org.genouest.hadoopizer.output.FastaOutputFormat
