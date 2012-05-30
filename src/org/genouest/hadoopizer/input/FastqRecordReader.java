@@ -35,8 +35,6 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
 
-        // TODO test support for compressed input (see org.apache.hadoop.mapreduce.lib.input.LineRecordReader)
-
         FileSplit fileSplit = (FileSplit) split;
         Configuration job = context.getConfiguration();
 
@@ -53,6 +51,7 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
         if (codec != null) {
             // Input file is compressed: it is not splitted => no need to seek
             lineReader = new LineReader(codec.createInputStream(fsin), job);
+            end = Long.MAX_VALUE; // TODO see if it works with splittable compressed files (lzo?)
         }
         else {
             lineReader = new LineReader(fsin, job);
@@ -80,19 +79,19 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
         
         Text newLine = new Text("");
         pos += lineReader.readLine(newLine);
-        if (newLine != null)
+        if (newLine != null && (newLine.getLength() > 0))
             currentRecord.add(newLine.toString());
         
         pos += lineReader.readLine(newLine);
-        if (newLine != null)
+        if (newLine != null && (newLine.getLength() > 0))
             currentRecord.add(newLine.toString());
         
         pos += lineReader.readLine(newLine);
-        if (newLine != null)
+        if (newLine != null && (newLine.getLength() > 0))
             currentRecord.add(newLine.toString());
         
         pos += lineReader.readLine(newLine);
-        if (newLine != null)
+        if (newLine != null && (newLine.getLength() > 0))
             currentRecord.add(newLine.toString());
     }
 
@@ -108,7 +107,7 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
 
         Text newLine = new Text("");
         pos += lineReader.readLine(newLine);
-        if (newLine != null)
+        if (newLine != null && (newLine.getLength() > 0))
             currentRecord.add(newLine.toString());
     }
     
@@ -128,10 +127,7 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
             if (currentRecord.get(0).startsWith("@") && currentRecord.get(2).startsWith("+") && (currentRecord.get(1).length() == currentRecord.get(3).length())) {
                 // This looks like a good FastQ record
                 // Construct the string
-                String record = "";
-                for (String line : currentRecord) {
-                    record += line+"\n";
-                }
+                String record = currentRecord.get(1) + "\n" + currentRecord.get(2) + "\n" + currentRecord.get(3);
                 
                 recordKey.set(currentRecord.get(0).substring(1));
                 recordValue.set(record);

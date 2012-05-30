@@ -20,6 +20,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.JobConfig;
 import org.genouest.hadoopizer.input.FastaInputFormat;
+import org.genouest.hadoopizer.input.FastqInputFormat;
 import org.genouest.hadoopizer.parsers.OutputParser;
 
 public class GenericMapper extends Mapper<Text, Text, Text, Text> { 
@@ -69,7 +70,10 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
     @Override
     protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
         
-        writer.write(value.toString(), 0, value.getLength());
+        // TODO make this step dependant of the input format!!
+        writer.write("@" + key.toString());
+        writer.newLine();
+        writer.write(value.toString());
         writer.newLine();
     }
 
@@ -136,7 +140,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         parser.parse(outputFile, context);
         
         // FIXME begin test reusing inputformat
-        /*FastaInputFormat inf = new FastaInputFormat();
+        /*FastqInputFormat inf = new FastqInputFormat();
         InputSplit split = new FileSplit(new Path(outputFile.toURI()), 0, outputFile.length(), null);
         RecordReader<Text, Text> reader = inf.createRecordReader(split, context);
         reader.initialize(split, context);

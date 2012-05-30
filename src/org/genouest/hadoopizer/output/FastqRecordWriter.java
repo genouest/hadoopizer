@@ -20,8 +20,7 @@ public class FastqRecordWriter<K, V> extends RecordWriter<K, V> {
     public void write(K key, V value) throws IOException, InterruptedException {
 
         String line = "@" + key.toString() + "\n";
-        out.write(line.getBytes());
-        line = value.toString() + "\n";
+        line += value.toString() + "\n";
         out.write(line.getBytes());
     }
 
