@@ -3,6 +3,7 @@ package org.genouest.hadoopizer.mappers;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -71,7 +72,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
     protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
         
         // TODO make this step dependant of the input format!!
-        writer.write("@" + key.toString());
+        writer.write(">" + key.toString());
         writer.newLine();
         writer.write(value.toString());
         writer.newLine();
@@ -136,18 +137,18 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
 
         // Process finished, get the output file content and add it to context
         context.setStatus("Parsing command output with " + config.getJobOutput().getReducer() + " parser");
-        OutputParser parser = config.getJobOutput().getOutputParser();
-        parser.parse(outputFile, context);
+        /*OutputParser parser = config.getJobOutput().getOutputParser();
+        parser.parse(outputFile, context);*/
         
         // FIXME begin test reusing inputformat
-        /*FastqInputFormat inf = new FastqInputFormat();
+        FastaInputFormat inf = new FastaInputFormat();
         InputSplit split = new FileSplit(new Path(outputFile.toURI()), 0, outputFile.length(), null);
         RecordReader<Text, Text> reader = inf.createRecordReader(split, context);
         reader.initialize(split, context);
         while (reader.nextKeyValue()) {
             context.write(reader.getCurrentKey(), reader.getCurrentValue());
         }
-        reader.close();*/
+        reader.close();
         // FIXME end test reusing inputformat
 
         // Remove temporary output files

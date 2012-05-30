@@ -79,19 +79,19 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
         
         Text newLine = new Text("");
         pos += lineReader.readLine(newLine);
-        if (newLine != null && (newLine.getLength() > 0))
+        if (newLine.getLength() > 0)
             currentRecord.add(newLine.toString());
         
         pos += lineReader.readLine(newLine);
-        if (newLine != null && (newLine.getLength() > 0))
+        if (newLine.getLength() > 0)
             currentRecord.add(newLine.toString());
         
         pos += lineReader.readLine(newLine);
-        if (newLine != null && (newLine.getLength() > 0))
+        if (newLine.getLength() > 0)
             currentRecord.add(newLine.toString());
         
         pos += lineReader.readLine(newLine);
-        if (newLine != null && (newLine.getLength() > 0))
+        if (newLine.getLength() > 0)
             currentRecord.add(newLine.toString());
     }
 
@@ -107,7 +107,7 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
 
         Text newLine = new Text("");
         pos += lineReader.readLine(newLine);
-        if (newLine != null && (newLine.getLength() > 0))
+        if (newLine.getLength() > 0)
             currentRecord.add(newLine.toString());
     }
     

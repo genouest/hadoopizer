@@ -67,12 +67,6 @@ public class FastaRecordReader extends RecordReader<Text, Text> {
             Text tmp = new Text("");
             pos += lineReader.readLine(tmp);
         }
-
-        // Read the first line
-        Text newLine = new Text("");
-        pos += lineReader.readLine(newLine);
-        if (newLine != null && (newLine.getLength() > 0))
-            nextLine = newLine.toString();
         
         // Seek to the next fasta header (if we're not already positionned on a fasta header)
         readUntilNextRecord();
@@ -89,16 +83,20 @@ public class FastaRecordReader extends RecordReader<Text, Text> {
         
         String sequence = "";
         Text newLine = new Text("");
+        boolean foundHeader = false;
+        boolean noDataLeft = false;
 
-        while (!nextLine.startsWith(">")) {
+        while (!foundHeader && !noDataLeft) { // FIXME check what happens with empty lines
             pos += lineReader.readLine(newLine);
-            if (newLine != null && (newLine.getLength() > 0))
-                nextLine = newLine.toString();
-            
+            nextLine = newLine.toString();
+            noDataLeft = newLine.getLength() <= 0;
+
             if (!nextLine.startsWith(">"))
                 sequence += nextLine;
+            else
+                foundHeader = true;
         }
-        
+
         return sequence;
     }
     
