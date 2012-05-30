@@ -14,7 +14,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.ReflectionUtils;
 
-public class FastqOutputFormat<K, V> extends FileOutputFormat<K, V> implements HadoopizerOutputFormat { // TODO test this
+public class FastqOutputFormat<K, V> extends FileOutputFormat<K, V> implements HadoopizerOutputFormat {
     
     @Override
     public RecordWriter<K, V> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {

@@ -3,7 +3,6 @@ package org.genouest.hadoopizer.mappers;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,15 +13,13 @@ import java.util.regex.Pattern;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.JobConfig;
-import org.genouest.hadoopizer.input.FastaInputFormat;
-import org.genouest.hadoopizer.input.FastqInputFormat;
-import org.genouest.hadoopizer.parsers.OutputParser;
 
 public class GenericMapper extends Mapper<Text, Text, Text, Text> { 
 
@@ -72,7 +69,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
     protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
         
         // TODO make this step dependant of the input format!!
-        writer.write(">" + key.toString());
+        writer.write("@" + key.toString());
         writer.newLine();
         writer.write(value.toString());
         writer.newLine();
@@ -137,19 +134,14 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
 
         // Process finished, get the output file content and add it to context
         context.setStatus("Parsing command output with " + config.getJobOutput().getReducer() + " parser");
-        /*OutputParser parser = config.getJobOutput().getOutputParser();
-        parser.parse(outputFile, context);*/
-        
-        // FIXME begin test reusing inputformat
-        FastaInputFormat inf = new FastaInputFormat();
+        FileInputFormat<?, ?> inf = config.getJobOutput().getFileInputFormat();
         InputSplit split = new FileSplit(new Path(outputFile.toURI()), 0, outputFile.length(), null);
-        RecordReader<Text, Text> reader = inf.createRecordReader(split, context);
+        RecordReader<Text, Text> reader = (RecordReader<Text, Text>) inf.createRecordReader(split, context); // FIXME problem with generic class
         reader.initialize(split, context);
         while (reader.nextKeyValue()) {
             context.write(reader.getCurrentKey(), reader.getCurrentValue());
         }
         reader.close();
-        // FIXME end test reusing inputformat
 
         // Remove temporary output files
         if (!outputFile.delete())

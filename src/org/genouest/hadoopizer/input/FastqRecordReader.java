@@ -145,7 +145,7 @@ public class FastqRecordReader extends RecordReader<Text, Text> {
                 tries++;
             }
         }
-        
+
         // Error parsing fastq if we get there
         throw new IOException("Failed to parse FastQ file");
     }

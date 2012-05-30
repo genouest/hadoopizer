@@ -9,9 +9,10 @@ import java.util.ServiceLoader;
 import org.apache.hadoop.io.compress.BZip2Codec;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.GzipCodec;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
-import org.genouest.hadoopizer.parsers.OutputParser;
 
 public class JobOutput {
 
@@ -136,24 +137,23 @@ public class JobOutput {
         throw new RuntimeException("Could not find a suitable OutputFormat service for id '" + getReducer() + "'");
     }
 
-
     /**
-     * Get an OutputParser able to split the command output in key/values
+     * Get an FileInputFormat able to parse the output produced by a map task
      * 
-     * @return an OutputParser corresponding to the reducerId defined for this JobOutput
+     * @return an FileInputFormat corresponding to the reducerId defined for this JobOutput
      */
-    public OutputParser getOutputParser() {
-        OutputParser outputParser = null;
+    public FileInputFormat<?, ?> getFileInputFormat() {
+        HadoopizerInputFormat inputFormat = null;
 
-        ServiceLoader<OutputParser> serviceLoader = ServiceLoader.load(OutputParser.class);
-        Iterator<OutputParser> iterator = serviceLoader.iterator();
+        ServiceLoader<HadoopizerInputFormat> serviceLoader = ServiceLoader.load(HadoopizerInputFormat.class);
+        Iterator<HadoopizerInputFormat> iterator = serviceLoader.iterator();
         while (iterator.hasNext()) {
-            outputParser = iterator.next();
-            if (outputParser.getId().equalsIgnoreCase(getReducer()))
-                return outputParser;
+            inputFormat = iterator.next();
+            if (inputFormat.getId().equalsIgnoreCase(getReducer()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
+                return (FileInputFormat<?, ?>) inputFormat;
         }
         
-        throw new RuntimeException("Could not find a suitable OutputParser service for id '" + getReducer() + "'");
+        throw new RuntimeException("Could not find a suitable InputFormat service for id '" + getReducer() + "'");
     }
 
     /**
