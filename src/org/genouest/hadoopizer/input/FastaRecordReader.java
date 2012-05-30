@@ -49,6 +49,8 @@ public class FastaRecordReader extends RecordReader<Text, Text> {
         if (codec != null) {
             // Input file is compressed: it is not splitted => no need to seek
             lineReader = new LineReader(codec.createInputStream(fsin), job);
+            end = Long.MAX_VALUE; // TODO see if it works with splittable compressed files (lzo?)
+            // TODO teste compressed fasta
         }
         else {
             lineReader = new LineReader(fsin, job);
@@ -69,7 +71,7 @@ public class FastaRecordReader extends RecordReader<Text, Text> {
         // Read the first line
         Text newLine = new Text("");
         pos += lineReader.readLine(newLine);
-        if (newLine != null)
+        if (newLine != null && (newLine.getLength() > 0))
             nextLine = newLine.toString();
         
         // Seek to the next fasta header (if we're not already positionned on a fasta header)
@@ -90,7 +92,7 @@ public class FastaRecordReader extends RecordReader<Text, Text> {
 
         while (!nextLine.startsWith(">")) {
             pos += lineReader.readLine(newLine);
-            if (newLine != null)
+            if (newLine != null && (newLine.getLength() > 0))
                 nextLine = newLine.toString();
             
             if (!nextLine.startsWith(">"))
