@@ -14,6 +14,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.LineReader;
+import org.genouest.hadoopizer.Hadoopizer;
 
 /**
  * Inspired by org.apache.hadoop.mapreduce.lib.input.LineRecordReader
@@ -112,6 +113,9 @@ public class FastaRecordReader extends RecordReader<Text, Text> {
             recordValue.set(readUntilNextRecord());
             
             return true;
+        }
+        else if (nextLine.isEmpty() && (pos > start)) {
+            return false;
         }
         else {
             // Means we didn't call readUntilNextRecord before which is not supposed to happen
