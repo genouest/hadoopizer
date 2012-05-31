@@ -346,15 +346,7 @@ public class Hadoopizer {
         }
         else if (uri.getScheme().equalsIgnoreCase("hdfs")) {
             logger.info("Adding file '" + uri + "' to distributed cache");
-            Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir"));
-            URI cacheUri = cacheDir.toUri();
-            if (!uri.getHost().equalsIgnoreCase(cacheUri.getHost())) {
-                // TODO Otherwise, download then copy? or just keep it like that? Need to test this
-            }
-            else {
-                // No transfer needed if on the same hdfs host
-                hdfsPath = localPath;
-            }
+            hdfsPath = localPath;
         }
         else {
             // TODO support other protocols (s3? ssh? http? ftp?)
