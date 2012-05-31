@@ -125,6 +125,7 @@ public class Hadoopizer {
         logger.info("Reading config file: "+configFile.getAbsolutePath());
         
         // Try to validate the xml
+        // TODO should we validate or not? dependency on endorsed lib for xml schema 1.1
         /*try {
             config.validateXml(configFile);
         } catch (FileNotFoundException e) {

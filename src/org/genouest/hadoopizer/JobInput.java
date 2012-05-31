@@ -3,7 +3,6 @@ package org.genouest.hadoopizer;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.ServiceLoader;
 
 import org.apache.hadoop.conf.Configuration;
@@ -173,14 +172,9 @@ public class JobInput {
      * @return an FileInputFormat corresponding to the splitter id defined for this JobInput
      */
     public FileInputFormat<?, ?> getFileInputFormat() {
-        HadoopizerInputFormat inputFormat = null;
-
-        ServiceLoader<HadoopizerInputFormat> serviceLoader = ServiceLoader.load(HadoopizerInputFormat.class);
-        Iterator<HadoopizerInputFormat> iterator = serviceLoader.iterator();
-        while (iterator.hasNext()) {
-            inputFormat = iterator.next();
+        for (HadoopizerInputFormat inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
             if (inputFormat.getId().equalsIgnoreCase(getSplitterId()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
-                return (FileInputFormat<?, ?>) inputFormat;
+                return(FileInputFormat<?, ?>)  inputFormat;
         }
         
         throw new RuntimeException("Could not find a suitable InputFormat service for id '" + getSplitterId() + "'");

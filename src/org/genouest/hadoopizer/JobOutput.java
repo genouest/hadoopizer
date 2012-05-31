@@ -2,7 +2,6 @@ package org.genouest.hadoopizer;
 
 import java.net.URI;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.ServiceLoader;
 
@@ -124,14 +123,9 @@ public class JobOutput {
      * @return an FileOutputFormat corresponding to the reducerId defined for this JobOutput
      */
     public HadoopizerOutputFormat<?, ?> getFileOutputFormat() {
-        HadoopizerOutputFormat outputFormat = null;
-
-        ServiceLoader<HadoopizerOutputFormat> serviceLoader = ServiceLoader.load(HadoopizerOutputFormat.class);
-        Iterator<HadoopizerOutputFormat> iterator = serviceLoader.iterator();
-        while (iterator.hasNext()) {
-            outputFormat = iterator.next();
+        for (HadoopizerOutputFormat<?, ?> outputFormat : ServiceLoader.load(HadoopizerOutputFormat.class)) {
             if (outputFormat.getId().equalsIgnoreCase(getReducer()) && (FileOutputFormat.class.isAssignableFrom(outputFormat.getClass())))
-                return (HadoopizerOutputFormat<?, ?>) outputFormat;
+                return outputFormat;
         }
         
         throw new RuntimeException("Could not find a suitable OutputFormat service for id '" + getReducer() + "'");
@@ -143,14 +137,9 @@ public class JobOutput {
      * @return an FileInputFormat corresponding to the reducerId defined for this JobOutput
      */
     public FileInputFormat<?, ?> getFileInputFormat() {
-        HadoopizerInputFormat inputFormat = null;
-
-        ServiceLoader<HadoopizerInputFormat> serviceLoader = ServiceLoader.load(HadoopizerInputFormat.class);
-        Iterator<HadoopizerInputFormat> iterator = serviceLoader.iterator();
-        while (iterator.hasNext()) {
-            inputFormat = iterator.next();
+        for (HadoopizerInputFormat inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
             if (inputFormat.getId().equalsIgnoreCase(getReducer()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
-                return (FileInputFormat<?, ?>) inputFormat;
+                return(FileInputFormat<?, ?>)  inputFormat;
         }
         
         throw new RuntimeException("Could not find a suitable InputFormat service for id '" + getReducer() + "'");
