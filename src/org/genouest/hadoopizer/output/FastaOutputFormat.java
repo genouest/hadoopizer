@@ -8,34 +8,20 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
-import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.util.ReflectionUtils;
 
-public class FastaOutputFormat<K, V> extends FileOutputFormat<K, V> implements HadoopizerOutputFormat {
-    
+public class FastaOutputFormat<K, V> extends HadoopizerOutputFormat<K, V> {
+
     @Override
-    public RecordWriter<K, V> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
+    public RecordWriter<K, V> getRecordWriter(TaskAttemptContext context, Path path, CompressionCodec codec) throws IOException, InterruptedException {
         
         Configuration conf = context.getConfiguration();
-        
-        boolean compress = getCompressOutput(context);
-        CompressionCodec codec = null;
-        String extension = ".fasta";
-        
-        if (compress) {
-            Class<? extends CompressionCodec> codecClass = getOutputCompressorClass(context, GzipCodec.class);
-            codec = (CompressionCodec) ReflectionUtils.newInstance(codecClass, conf);
-            extension += codec.getDefaultExtension();
-        }
 
-        Path path = getDefaultWorkFile(context, extension);
         FileSystem fs = path.getFileSystem(conf);
 
-        FSDataOutputStream out = fs.create(path, false);
-        if (!compress) {
+        FSDataOutputStream out = fs.create(path, true);
+        if (codec == null) {
             return new FastaRecordWriter<K, V>(out);
         }
         else {
@@ -49,4 +35,9 @@ public class FastaOutputFormat<K, V> extends FileOutputFormat<K, V> implements H
         return "fasta";
     }
 
+    @Override
+    public String getExtension() {
+        
+        return "fasta";
+    }
 }

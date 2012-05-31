@@ -123,7 +123,7 @@ public class JobOutput {
      * 
      * @return an FileOutputFormat corresponding to the reducerId defined for this JobOutput
      */
-    public FileOutputFormat<?, ?> getFileOutputFormat() {
+    public HadoopizerOutputFormat<?, ?> getFileOutputFormat() {
         HadoopizerOutputFormat outputFormat = null;
 
         ServiceLoader<HadoopizerOutputFormat> serviceLoader = ServiceLoader.load(HadoopizerOutputFormat.class);
@@ -131,7 +131,7 @@ public class JobOutput {
         while (iterator.hasNext()) {
             outputFormat = iterator.next();
             if (outputFormat.getId().equalsIgnoreCase(getReducer()) && (FileOutputFormat.class.isAssignableFrom(outputFormat.getClass())))
-                return (FileOutputFormat<?, ?>) outputFormat;
+                return (HadoopizerOutputFormat<?, ?>) outputFormat;
         }
         
         throw new RuntimeException("Could not find a suitable OutputFormat service for id '" + getReducer() + "'");

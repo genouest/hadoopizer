@@ -18,14 +18,16 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.RecordWriter;
 import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.JobConfig;
+import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 
 public class GenericMapper extends Mapper<Text, Text, Text, Text> { 
 
     private JobConfig config;
     private File inputFile;
-    private BufferedWriter writer;
+    private RecordWriter<Text, Text> writer;
 
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
@@ -59,27 +61,25 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         // Write data chunk to a temporary input file
         // This input file will be used in the command line launched in the cleanup step
         inputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "input", ".chunk");
-        writer = new BufferedWriter(new FileWriter(inputFile));
         Hadoopizer.logger.info("Writing input chunk to '" + inputFile.getAbsolutePath());
+        
+        HadoopizerOutputFormat<?, ?> outf = config.getJobOutput().getFileOutputFormat();
+        writer = (RecordWriter<Text, Text>) outf.getRecordWriter(context, new Path("file:"+inputFile.getAbsolutePath()), null); // FIXME problem with generic class
 
         config.getSplittableInput().setLocalPath(inputFile.getAbsolutePath());
     }
 
+
     @Override
     protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
         
-        // TODO make this step dependant of the input format!!
-        writer.write("@" + key.toString());
-        writer.newLine();
-        writer.write(value.toString());
-        writer.newLine();
+        writer.write(key, value);
     }
 
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
-
-        writer.flush();
-        writer.close();
+        
+        writer.close(context);
         
         // TODO maybe add a lock (optional?) to make sure only 1 command running at the same time on each node. This is done by eoulsan, but not necessarily useful.
 
