@@ -49,7 +49,7 @@ public class JobOutput {
      * 
      * @return the reducerId
      */
-    public String getReducer() {
+    public String getReducerId() {
         return reducerId;
     }
 
@@ -58,7 +58,7 @@ public class JobOutput {
      * 
      * @param reducerId the reducerId to set
      */
-    public void setReducer(String reducer) {
+    public void setReducerId(String reducer) {
         this.reducerId = reducer;
     }
 
@@ -120,29 +120,29 @@ public class JobOutput {
     /**
      * Get an FileOutputFormat able to merge the output
      * 
-     * @return an FileOutputFormat corresponding to the reducerId defined for this JobOutput
+     * @return a FileOutputFormat corresponding to the reducerId defined for this JobOutput
      */
     public HadoopizerOutputFormat<?, ?> getFileOutputFormat() {
         for (HadoopizerOutputFormat<?, ?> outputFormat : ServiceLoader.load(HadoopizerOutputFormat.class)) {
-            if (outputFormat.getId().equalsIgnoreCase(getReducer()) && (FileOutputFormat.class.isAssignableFrom(outputFormat.getClass())))
+            if (outputFormat.getId().equalsIgnoreCase(getReducerId()) && (FileOutputFormat.class.isAssignableFrom(outputFormat.getClass())))
                 return outputFormat;
         }
         
-        throw new RuntimeException("Could not find a suitable OutputFormat service for id '" + getReducer() + "'");
+        throw new RuntimeException("Could not find a suitable OutputFormat service for id '" + getReducerId() + "'");
     }
 
     /**
      * Get an FileInputFormat able to parse the output produced by a map task
      * 
-     * @return an FileInputFormat corresponding to the reducerId defined for this JobOutput
+     * @return a FileInputFormat corresponding to the reducerId defined for this JobOutput
      */
     public FileInputFormat<?, ?> getFileInputFormat() {
         for (HadoopizerInputFormat inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
-            if (inputFormat.getId().equalsIgnoreCase(getReducer()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
+            if (inputFormat.getId().equalsIgnoreCase(getReducerId()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
                 return(FileInputFormat<?, ?>)  inputFormat;
         }
         
-        throw new RuntimeException("Could not find a suitable InputFormat service for id '" + getReducer() + "'");
+        throw new RuntimeException("Could not find a suitable InputFormat service for id '" + getReducerId() + "'");
     }
 
     /**

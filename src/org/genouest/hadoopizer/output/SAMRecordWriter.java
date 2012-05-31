@@ -26,15 +26,18 @@ public class SAMRecordWriter<K, V> extends RecordWriter<K, V> {
         Path headerFile = new Path(headerFileName);
         try {
             FileSystem fs = headerFile.getFileSystem(conf);
-            FSDataInputStream in = fs.open(headerFile);
-            
-            byte[] buffer = new byte[8192];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) > 0) {
-                out.write(buffer, 0, bytesRead);
+        
+            if (fs.exists(headerFile)) {
+                FSDataInputStream in = fs.open(headerFile);
+                
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) > 0) {
+                    out.write(buffer, 0, bytesRead);
+                }
+                
+                in.close();
             }
-            
-            in.close();
         } catch (IOException e) {
             System.err.println("Failed to copy output header from " + headerFileName + " to output file");
             e.printStackTrace();

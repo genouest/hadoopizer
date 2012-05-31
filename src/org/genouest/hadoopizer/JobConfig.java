@@ -225,7 +225,7 @@ public class JobConfig {
 
         jobOutput = new JobOutput(output.getAttribute("id"));
         Element reducer = (Element) output.getElementsByTagName("reducer").item(0);
-        jobOutput.setReducer(reducer.getTextContent());
+        jobOutput.setReducerId(reducer.getTextContent());
         if (reducer.hasAttribute("format") && reducer.getAttribute("format").equalsIgnoreCase("sequence")) {
             // The output needs to be stored as hadoop SequenceFile for reuse in a future hadoop job
             jobOutput.setSequenceOutput(true);
@@ -256,7 +256,7 @@ public class JobConfig {
             System.exit(1);
         }
 
-        Hadoopizer.logger.info("Using reducer '"+jobOutput.getReducer()+"' for output '"+jobOutput.getId()+"' ("+jobOutput.getUrl()+")");
+        Hadoopizer.logger.info("Using reducer '"+jobOutput.getReducerId()+"' for output '"+jobOutput.getId()+"' ("+jobOutput.getUrl()+")");
         
         // Load hadoop specific configuration
         NodeList hadoops = null;
@@ -343,7 +343,7 @@ public class JobConfig {
         outputElement.setAttribute("id", jobOutput.getId());
 
         Element splitter = doc.createElement("reducer");
-        splitter.appendChild(doc.createTextNode(jobOutput.getReducer()));
+        splitter.appendChild(doc.createTextNode(jobOutput.getReducerId()));
         if (jobOutput.isSequenceOutput()) {
             splitter.setAttribute("format", "sequence");
         }

@@ -10,7 +10,9 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
+import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 
 public class JobInput {
 
@@ -169,7 +171,7 @@ public class JobInput {
     /**
      * Get a FileInputFormat instance able to split the splittable input
      * 
-     * @return an FileInputFormat corresponding to the splitter id defined for this JobInput
+     * @return a FileInputFormat corresponding to the splitter id defined for this JobInput
      */
     public FileInputFormat<?, ?> getFileInputFormat() {
         for (HadoopizerInputFormat inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
@@ -178,5 +180,19 @@ public class JobInput {
         }
         
         throw new RuntimeException("Could not find a suitable InputFormat service for id '" + getSplitterId() + "'");
+    }
+
+    /**
+     * Get a FileOutputFormat instance able to write the splittable input into a temporary file
+     * 
+     * @return a FileOutputFormat corresponding to the splitter id defined for this JobInput
+     */
+    public HadoopizerOutputFormat<?, ?> getFileOutputFormat() {
+        for (HadoopizerOutputFormat<?, ?> outputFormat : ServiceLoader.load(HadoopizerOutputFormat.class)) {
+            if (outputFormat.getId().equalsIgnoreCase(getSplitterId()) && (FileOutputFormat.class.isAssignableFrom(outputFormat.getClass())))
+                return outputFormat;
+        }
+        
+        throw new RuntimeException("Could not find a suitable OutputFormat service for id '" + getSplitterId() + "'");
     }
 }
