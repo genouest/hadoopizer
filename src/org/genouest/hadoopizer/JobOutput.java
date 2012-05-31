@@ -136,10 +136,10 @@ public class JobOutput {
      * 
      * @return a FileInputFormat corresponding to the reducerId defined for this JobOutput
      */
-    public FileInputFormat<?, ?> getFileInputFormat() {
-        for (HadoopizerInputFormat inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
+    public HadoopizerInputFormat<?, ?> getFileInputFormat() {
+        for (HadoopizerInputFormat<?, ?> inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
             if (inputFormat.getId().equalsIgnoreCase(getReducerId()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
-                return(FileInputFormat<?, ?>)  inputFormat;
+                return inputFormat;
         }
         
         throw new RuntimeException("Could not find a suitable InputFormat service for id '" + getReducerId() + "'");

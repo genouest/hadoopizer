@@ -144,6 +144,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         while (reader.nextKeyValue()) {
             context.write(reader.getCurrentKey(), reader.getCurrentValue());
         }
+        // FIXME reader.getHeader() here and inject in the header file if needed
         reader.close();
 
         // Remove temporary output files

@@ -173,10 +173,10 @@ public class JobInput {
      * 
      * @return a FileInputFormat corresponding to the splitter id defined for this JobInput
      */
-    public FileInputFormat<?, ?> getFileInputFormat() {
-        for (HadoopizerInputFormat inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
+    public HadoopizerInputFormat<?, ?> getFileInputFormat() {
+        for (HadoopizerInputFormat<?, ?> inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
             if (inputFormat.getId().equalsIgnoreCase(getSplitterId()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
-                return(FileInputFormat<?, ?>)  inputFormat;
+                return inputFormat;
         }
         
         throw new RuntimeException("Could not find a suitable InputFormat service for id '" + getSplitterId() + "'");
