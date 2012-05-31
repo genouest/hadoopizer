@@ -317,8 +317,6 @@ public class Hadoopizer {
         // First define some default settings
         Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + "temp_header_file.txt");
         jobConf.set("hadoopizer.temp.header.file", cacheDir.toString()); // TODO document this
-        jobConf.set("mapred.compress.map.output", "true"); // TODO should it be set by default? and does it work?
-        //jobConf.set("mapred.map.output.compression.codec", "org.apache.hadoop.io.compress.GzipCodec"); // FIXME how to choose the good codec?
         
         // Then load other options from job file (overriding if needed)
         for (Map.Entry<String, String> e : config.getHadoopConfig().entrySet()) {
