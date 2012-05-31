@@ -29,6 +29,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
     private File inputFile;
     private RecordWriter<Text, Text> writer;
 
+    @SuppressWarnings("unchecked")
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
 
@@ -64,7 +65,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         Hadoopizer.logger.info("Writing input chunk to '" + inputFile.getAbsolutePath());
         
         HadoopizerOutputFormat<?, ?> outf = config.getJobOutput().getFileOutputFormat();
-        writer = (RecordWriter<Text, Text>) outf.getRecordWriter(context, new Path("file:"+inputFile.getAbsolutePath()), null); // FIXME problem with generic class
+        writer = (RecordWriter<Text, Text>) outf.getRecordWriter(context, new Path("file:"+inputFile.getAbsolutePath()), null);
 
         config.getSplittableInput().setLocalPath(inputFile.getAbsolutePath());
     }
@@ -136,7 +137,8 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         context.setStatus("Parsing command output with " + config.getJobOutput().getReducer() + " parser");
         FileInputFormat<?, ?> inf = config.getJobOutput().getFileInputFormat();
         InputSplit split = new FileSplit(new Path(outputFile.toURI()), 0, outputFile.length(), null);
-        RecordReader<Text, Text> reader = (RecordReader<Text, Text>) inf.createRecordReader(split, context); // FIXME problem with generic class
+        @SuppressWarnings("unchecked")
+        RecordReader<Text, Text> reader = (RecordReader<Text, Text>) inf.createRecordReader(split, context);
         reader.initialize(split, context);
         while (reader.nextKeyValue()) {
             context.write(reader.getCurrentKey(), reader.getCurrentValue());
