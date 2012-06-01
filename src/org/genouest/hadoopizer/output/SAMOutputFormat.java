@@ -7,15 +7,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-public class SAMOutputFormat<K, V> extends HadoopizerOutputFormat<K, V> {
-
+public class SAMOutputFormat extends HadoopizerOutputFormat<Text, Text> {
 
     @Override
-    public RecordWriter<K, V> getRecordWriter(TaskAttemptContext context, Path path, CompressionCodec codec) throws IOException, InterruptedException {
+    public RecordWriter<Text, Text> getRecordWriter(TaskAttemptContext context, Path path, CompressionCodec codec) throws IOException, InterruptedException {
         
         Configuration conf = context.getConfiguration();
         
@@ -23,10 +23,10 @@ public class SAMOutputFormat<K, V> extends HadoopizerOutputFormat<K, V> {
 
         FSDataOutputStream out = fs.create(path, true);
         if (codec == null) {
-            return new SAMRecordWriter<K, V>(out, context);
+            return new SAMRecordWriter(out, context, getHeaderTempFile(conf));
         }
         else {
-            return new SAMRecordWriter<K, V>(new DataOutputStream(codec.createOutputStream(out)), context);
+            return new SAMRecordWriter(new DataOutputStream(codec.createOutputStream(out)), context, getHeaderTempFile(conf));
         }
     }
 

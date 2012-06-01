@@ -13,7 +13,6 @@ import java.util.regex.Pattern;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -21,6 +20,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.JobConfig;
+import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 
 public class GenericMapper extends Mapper<Text, Text, Text, Text> { 
@@ -64,6 +64,11 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         inputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "input", ".chunk");
         
         HadoopizerOutputFormat<?, ?> outf = config.getSplittableInput().getFileOutputFormat();
+        
+        // We want to add the header from input file to each chunk file
+        Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file"));
+        outf.setHeaderTempFile(headerFile);
+        
         writer = (RecordWriter<Text, Text>) outf.getRecordWriter(context, new Path("file:"+inputFile.getAbsolutePath()), null);
         
         Hadoopizer.logger.info("Writing input chunk to '" + inputFile.getAbsolutePath() + "' with OutputFormat class '" + writer.getClass().getCanonicalName() + "'");
@@ -136,7 +141,13 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
 
         // Process finished, get the output file content and add it to context
         context.setStatus("Parsing command output with " + config.getJobOutput().getReducerId() + " parser");
-        FileInputFormat<?, ?> inf = config.getJobOutput().getFileInputFormat();
+        
+        HadoopizerInputFormat<?, ?> inf = config.getJobOutput().getFileInputFormat();
+        
+        // We want to add the header in the final output file
+        Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.output.header.file"));
+        inf.setHeaderTempFile(headerFile);
+        
         InputSplit split = new FileSplit(new Path(outputFile.toURI()), 0, outputFile.length(), null);
         @SuppressWarnings("unchecked")
         RecordReader<Text, Text> reader = (RecordReader<Text, Text>) inf.createRecordReader(split, context);
@@ -144,7 +155,6 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         while (reader.nextKeyValue()) {
             context.write(reader.getCurrentKey(), reader.getCurrentValue());
         }
-        // FIXME reader.getHeader() here and inject in the header file if needed
         reader.close();
 
         // Remove temporary output files

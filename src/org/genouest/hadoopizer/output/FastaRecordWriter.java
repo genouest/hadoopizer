@@ -3,22 +3,34 @@ package org.genouest.hadoopizer.output;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-public class FastaRecordWriter<K, V> extends RecordWriter<K, V> {
+public class FastaRecordWriter extends HadoopizerRecordWriter<Text, Text> {
 
-    DataOutputStream out;
+    private DataOutputStream out;
+    private Path headerTempFile;
+    private Configuration conf;
 
-    public FastaRecordWriter(DataOutputStream out) {
+    public FastaRecordWriter(DataOutputStream out, TaskAttemptContext context, Path headerTempFile) {
 
-        super();
         this.out = out;
+        
+        // we cannot prepend the header now because it is not filled yet
+        this.headerTempFile = headerTempFile;
+        this.conf = context.getConfiguration();
     }
 
     @Override
-    public void write(K key, V value) throws IOException, InterruptedException {
+    public void write(Text key, Text value) throws IOException, InterruptedException {
 
+        if (headerTempFile != null) {
+            writeHeader(out, conf, headerTempFile);
+            headerTempFile = null;
+        }
+        
         String line = ">" + key.toString() + "\n";
         line += value.toString() + "\n";
         out.write(line.getBytes());

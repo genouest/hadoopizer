@@ -12,6 +12,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.ReflectionUtils;
 
 public abstract class HadoopizerOutputFormat<K, V> extends FileOutputFormat<K, V> { 
+
+    private Path headerTempFile;
     
     /**
      * @return An ID identifying the type of data that can be written by the current OutputFormat
@@ -22,6 +24,28 @@ public abstract class HadoopizerOutputFormat<K, V> extends FileOutputFormat<K, V
      * @return The file extension (without the initial dot) for output files
      */
     public abstract String getExtension();
+
+    /**
+     * TODO document
+     */
+    public Path getHeaderTempFile(Configuration conf) {
+        
+        if (headerTempFile == null) {
+            // No special temp file defined to save header content, use the default one
+            String headerFileName = conf.get("hadoopizer.temp.output.header.file");
+            if (headerFileName != null &&  !headerFileName.isEmpty())
+                headerTempFile = new Path(headerFileName);
+        }
+        
+        return headerTempFile;
+    }
+    
+    /**
+     * TODO document
+     */
+    public void setHeaderTempFile(Path headerTempFile) {
+        this.headerTempFile = headerTempFile;
+    }
     
     @Override
     public RecordWriter<K, V> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {

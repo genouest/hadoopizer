@@ -2,6 +2,7 @@ package org.genouest.hadoopizer.input;
 
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
@@ -15,14 +16,17 @@ public class FastaInputFormat extends HadoopizerInputFormat<Text, Text> {
 
     @Override
     public RecordReader<Text, Text> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
-
-        context.setStatus("Received a fasta split of length: " + split.getLength());
-        return new FastaRecordReader();
+        
+        Configuration conf = context.getConfiguration();
+        
+        return new FastaRecordReader(getHeaderTempFile(conf), conf);
     }
 
     @Override
     protected boolean isSplitable(JobContext context, Path filename) {
+        
         CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration()).getCodec(filename);
+        
         return codec == null;
     }
 

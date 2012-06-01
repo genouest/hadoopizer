@@ -4,50 +4,33 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.RecordWriter;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-public class SAMRecordWriter<K, V> extends RecordWriter<K, V> {
+public class SAMRecordWriter extends HadoopizerRecordWriter<Text, Text> {
 
-    DataOutputStream out;
+    private DataOutputStream out;
+    private Path headerTempFile;
+    private Configuration conf;
 
-    public SAMRecordWriter(DataOutputStream out, TaskAttemptContext context) {
+    public SAMRecordWriter(DataOutputStream out, TaskAttemptContext context, Path headerTempFile) {
 
-        super();
         this.out = out;
         
-        // Write the file header
-        Configuration conf = context.getConfiguration();
-
-        String headerFileName = conf.get("hadoopizer.temp.header.file");
-        Path headerFile = new Path(headerFileName);
-        try {
-            FileSystem fs = headerFile.getFileSystem(conf);
-        
-            if (fs.exists(headerFile)) {
-                FSDataInputStream in = fs.open(headerFile);
-                
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-                while ((bytesRead = in.read(buffer)) > 0) {
-                    out.write(buffer, 0, bytesRead);
-                }
-                
-                in.close();
-            }
-        } catch (IOException e) {
-            System.err.println("Failed to copy output header from " + headerFileName + " to output file");
-            e.printStackTrace();
-            System.exit(1);
-        }
+        // we cannot prepend the header now because it is not filled yet
+        this.headerTempFile = headerTempFile;
+        this.conf = context.getConfiguration();
     }
 
     @Override
-    public void write(K key, V value) throws IOException, InterruptedException {
+    public void write(Text key, Text value) throws IOException, InterruptedException {
 
+        if (headerTempFile != null) {
+            writeHeader(out, conf, headerTempFile);
+            headerTempFile = null;
+        }
+        
         String line = key.toString() + "\t" + value.toString() + "\n";
         out.write(line.getBytes());
     }

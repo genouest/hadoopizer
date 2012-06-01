@@ -7,14 +7,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-public class FastqOutputFormat<K, V> extends HadoopizerOutputFormat<K, V> {
+public class FastqOutputFormat extends HadoopizerOutputFormat<Text, Text> {
 
     @Override
-    public RecordWriter<K, V> getRecordWriter(TaskAttemptContext context, Path path, CompressionCodec codec) throws IOException, InterruptedException {
+    public RecordWriter<Text, Text> getRecordWriter(TaskAttemptContext context, Path path, CompressionCodec codec) throws IOException, InterruptedException {
         
         Configuration conf = context.getConfiguration();
         
@@ -22,10 +23,10 @@ public class FastqOutputFormat<K, V> extends HadoopizerOutputFormat<K, V> {
 
         FSDataOutputStream out = fs.create(path, true);
         if (codec == null) {
-            return new FastqRecordWriter<K, V>(out);
+            return new FastqRecordWriter(out, context, getHeaderTempFile(conf));
         }
         else {
-            return new FastqRecordWriter<K, V>(new DataOutputStream(codec.createOutputStream(out)));
+            return new FastqRecordWriter(new DataOutputStream(codec.createOutputStream(out)), context, getHeaderTempFile(conf));
         }
     }
     

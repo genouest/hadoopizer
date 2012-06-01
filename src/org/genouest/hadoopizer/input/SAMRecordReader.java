@@ -11,14 +11,13 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.LineReader;
 
 /**
  * Inspired by org.apache.hadoop.mapreduce.lib.input.LineRecordReader
  */
-public class SAMRecordReader extends RecordReader<Text, Text> {
+public class SAMRecordReader extends HadoopizerRecordReader<Text, Text> {
 
     private long start;
     private long end;
@@ -29,6 +28,11 @@ public class SAMRecordReader extends RecordReader<Text, Text> {
 
     private Text recordKey = new Text();
     private Text recordValue = new Text();
+
+    public SAMRecordReader(Path headerTempFile, Configuration conf) {
+        
+        super(headerTempFile, conf);
+    }
     
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
@@ -81,11 +85,16 @@ public class SAMRecordReader extends RecordReader<Text, Text> {
             pos += lineReader.readLine(newLine);
             nextLine = newLine.toString();
             
-            if (!nextLine.startsWith("@")) { // TODO save header somewhere
+            if (!nextLine.startsWith("@")) {
+                headerFinished();
                 if (newLine.getLength() <= 0) // TODO test with empty lines
                     return false;
                 
                 foundRecord = true;
+            }
+            else {
+                // Found a SAM header, write it to a temp file if needed
+                writeHeaderLine(nextLine);
             }
         }
         
@@ -112,6 +121,8 @@ public class SAMRecordReader extends RecordReader<Text, Text> {
     @Override
     public void close() throws IOException {
 
+        super.close();
+        
         if (lineReader != null)
             lineReader.close();
     }

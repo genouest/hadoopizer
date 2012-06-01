@@ -11,14 +11,13 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.LineReader;
 
 /**
  * Inspired by org.apache.hadoop.mapreduce.lib.input.LineRecordReader
  */
-public class FastaRecordReader extends RecordReader<Text, Text> {
+public class FastaRecordReader extends HadoopizerRecordReader<Text, Text> {
 
     private long start;
     private long end;
@@ -29,6 +28,11 @@ public class FastaRecordReader extends RecordReader<Text, Text> {
 
     private Text recordKey = new Text();
     private Text recordValue = new Text();
+
+    public FastaRecordReader(Path headerTempFile, Configuration conf) {
+        
+        super(headerTempFile, conf);
+    }
     
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
@@ -69,6 +73,8 @@ public class FastaRecordReader extends RecordReader<Text, Text> {
         
         // Seek to the next fasta header (if we're not already positionned on a fasta header)
         readUntilNextRecord();
+        
+        headerFinished(); // No header in fasta
     }
 
     /**
@@ -136,6 +142,8 @@ public class FastaRecordReader extends RecordReader<Text, Text> {
     @Override
     public void close() throws IOException {
 
+        super.close();
+        
         if (lineReader != null)
             lineReader.close();
     }
