@@ -54,7 +54,7 @@ public abstract class HadoopizerOutputFormat<K, V> extends FileOutputFormat<K, V
         
         boolean compress = getCompressOutput(context);
         CompressionCodec codec = null;
-        String extension = getExtension();
+        String extension = "." + getExtension();
         
         if (compress) {
             Class<? extends CompressionCodec> codecClass = getOutputCompressorClass(context, GzipCodec.class);
