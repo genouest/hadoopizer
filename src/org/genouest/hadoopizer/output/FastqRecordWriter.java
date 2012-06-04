@@ -22,14 +22,14 @@ public class FastqRecordWriter extends HadoopizerRecordWriter<Text, Text> {
         this.headerTempFile = headerTempFile;
         this.conf = context.getConfiguration();
         
-        writeHeader(out, context.getConfiguration(), headerTempFile);
+        writeHeader(headerTempFile, out, context.getConfiguration());
     }
 
     @Override
     public void write(Text key, Text value) throws IOException, InterruptedException {
 
         if (headerTempFile != null) {
-            writeHeader(out, conf, headerTempFile);
+            writeHeader(headerTempFile, out, conf);
             headerTempFile = null;
         }
         

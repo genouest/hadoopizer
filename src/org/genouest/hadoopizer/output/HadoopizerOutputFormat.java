@@ -16,17 +16,24 @@ public abstract class HadoopizerOutputFormat<K, V> extends FileOutputFormat<K, V
     private Path headerTempFile;
     
     /**
-     * @return An ID identifying the type of data that can be written by the current OutputFormat
+     * Get the ID identifying the type of data that can be written by the current OutputFormat
+     * 
+     * @return The id
      */
     public abstract String getId();
     
     /**
+     * Get the file extension for output file
+     * 
      * @return The file extension (without the initial dot) for output files
      */
     public abstract String getExtension();
 
     /**
-     * TODO document
+     * Get a file where output file header can be saved
+     * 
+     * @param conf The job configuration
+     * @return A Path object for the temporary header file
      */
     public Path getHeaderTempFile(Configuration conf) {
         
@@ -39,9 +46,11 @@ public abstract class HadoopizerOutputFormat<K, V> extends FileOutputFormat<K, V
         
         return headerTempFile;
     }
-    
+
     /**
-     * TODO document
+     * Set a file where output file header can be saved
+     * 
+     * @param headerTempFile The path where output header should be saved
      */
     public void setHeaderTempFile(Path headerTempFile) {
         this.headerTempFile = headerTempFile;

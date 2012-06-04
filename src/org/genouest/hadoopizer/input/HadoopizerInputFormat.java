@@ -9,12 +9,17 @@ public abstract class HadoopizerInputFormat<K, V> extends FileInputFormat<K, V> 
     private Path headerTempFile;
     
     /**
-     * @return An ID identifying the type of data that can be splitted by the current InputFormat
+     * Get the ID identifying the type of data that can be splitted by the current InputFormat
+     * 
+     * @return The id
      */
     public abstract String getId();
 
     /**
-     * TODO document
+     * Get a file where input file header can be saved
+     * 
+     * @param conf The job configuration
+     * @return A Path object for the temporary header file
      */
     public Path getHeaderTempFile(Configuration conf) {
         
@@ -29,9 +34,12 @@ public abstract class HadoopizerInputFormat<K, V> extends FileInputFormat<K, V> 
     }
     
     /**
-     * TODO document
+     * Set a file where input file header can be saved
+     * 
+     * @param headerTempFile The path where input header should be saved
      */
     public void setHeaderTempFile(Path headerTempFile) {
+        
         this.headerTempFile = headerTempFile;
     }
 }

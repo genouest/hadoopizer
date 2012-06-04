@@ -99,9 +99,9 @@ public class JobOutput {
     }
 
     /**
-     * TODO document
+     * Does the output should be saved in SequenceFile format?
      * 
-     * @return the sequenceOutput
+     * @return true if the output should be saved in SequenceFile format
      */
     public boolean isSequenceOutput() {
         // TODO implement saving as sequencefile
@@ -109,9 +109,9 @@ public class JobOutput {
     }
 
     /**
-     * TODO document
+     * Set wether the output should be saved in SequenceFile format
      * 
-     * @param sequenceOutput the sequenceOutput to set
+     * @param sequenceOutput true if the output should be saved in SequenceFile format
      */
     public void setSequenceOutput(boolean sequenceOutput) {
         this.sequenceOutput = sequenceOutput;

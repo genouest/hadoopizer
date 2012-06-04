@@ -107,7 +107,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         cmdFile.setExecutable(true);
         FileWriter fw = new FileWriter(cmdFile);
         BufferedWriter cmdWriter = new BufferedWriter(fw);
-        cmdWriter.write("#!/bin/bash"); // FIXME dependency on bash
+        cmdWriter.write(context.getConfiguration().get("hadoopizer.shell.interpreter"));
         cmdWriter.newLine();
         cmdWriter.write(command);
         cmdWriter.flush();

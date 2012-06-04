@@ -12,12 +12,13 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 public abstract class HadoopizerRecordWriter<K, V> extends RecordWriter<K, V> {
 
     /**
-     * TODO document
+     * Write header to output file
      * 
-     * @param out
-     * @param conf
+     * @param out An output stream where the header will be written
+     * @param conf Job configuration object
+     * @param headerTempFile Path containing the header to prepend to each output file
      */
-    protected void writeHeader(DataOutputStream out, Configuration conf, Path headerTempFile) {
+    protected void writeHeader(Path headerTempFile, DataOutputStream out, Configuration conf) {
 
         if (headerTempFile != null) {
             try {

@@ -27,7 +27,7 @@ public class FastaRecordWriter extends HadoopizerRecordWriter<Text, Text> {
     public void write(Text key, Text value) throws IOException, InterruptedException {
 
         if (headerTempFile != null) {
-            writeHeader(out, conf, headerTempFile);
+            writeHeader(headerTempFile, out, conf);
             headerTempFile = null;
         }
         
