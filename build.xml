@@ -23,8 +23,5 @@
         <copy file="/udd/abretaud/workspace/hadoopizer/lib/common-codec.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
         <copy file="/udd/abretaud/workspace/hadoopizer/lib/common-compress.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
         <copy file="/udd/abretaud/workspace/hadoopizer/lib/commons-cli.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
-        <copy todir="/udd/abretaud/hadoopizer_latest_lib">
-        	  <fileset dir="/udd/abretaud/workspace/hadoopizer/lib" includes="endorsed/*"/>
-        </copy>
     </target>
 </project>

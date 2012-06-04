@@ -94,7 +94,7 @@ public class Hadoopizer {
         Options options = new Options();
         options.addOption("c", "config", true, "Path to a XML file describing the command to run");
         options.addOption("w", "work-dir", true, "HDFS url where temporary files will be placed. The directory must not already exist");
-        options.addOption("b", "binaries", true, "Archive containing the binaries to execute. The archive is unzipped on each node in a 'binaries' directory in the work dir."); // TODO document location on nodes
+        options.addOption("b", "binaries", true, "Archive containing the binaries to execute. The archive is unzipped on each node in a 'binaries' directory in the work dir.");
         options.addOption("h", "help", false, "Display help");
         options.addOption("v", "version", false, "Display version information");
         
@@ -124,8 +124,7 @@ public class Hadoopizer {
         }
         logger.info("Reading config file: "+configFile.getAbsolutePath());
         
-        // Try to validate the xml
-        // TODO should we validate or not? dependency on endorsed lib for xml schema 1.1
+        // We could validate the xml but it introduces a dependency on endorsed lib for xml schema 1.1
         /*try {
             config.validateXml(configFile);
         } catch (FileNotFoundException e) {
@@ -173,7 +172,7 @@ public class Hadoopizer {
         URI archUri = arch.toURI();
         Path archPath = new Path(archUri);
         
-        Path hdfsPath = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + Path.SEPARATOR + "binaries" + Path.SEPARATOR + archPath.getName());
+        Path hdfsPath = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + Path.SEPARATOR + jobConf.get("hadoopizer.binaries.link.name") + Path.SEPARATOR + archPath.getName());
         FileSystem fs = hdfsPath.getFileSystem(jobConf);
         
         if (archUri.getScheme().equalsIgnoreCase("file")) {
@@ -183,7 +182,7 @@ public class Hadoopizer {
             // TODO compatibility with other protocols??
         }
         
-        URI hdfsUri = URI.create(hdfsPath.toString() + "#binaries");
+        URI hdfsUri = URI.create(hdfsPath.toString() + "#" + jobConf.get("hadoopizer.binaries.link.name"));
         DistributedCache.addCacheArchive(hdfsUri, jobConf);
     }
 
@@ -319,6 +318,7 @@ public class Hadoopizer {
         Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir"));
         jobConf.set("hadoopizer.temp.input.header.file", cacheDir.toString() + Path.SEPARATOR + "temp_input_header_file.txt"); // TODO document this
         jobConf.set("hadoopizer.temp.output.header.file", cacheDir.toString() + Path.SEPARATOR  + "temp_output_header_file.txt"); // TODO document this
+        jobConf.set("hadoopizer.binaries.link.name", "binaries");
         
         // Then load other options from job file (overriding if needed)
         for (Map.Entry<String, String> e : config.getHadoopConfig().entrySet()) {

@@ -57,6 +57,7 @@ public class JobConfig {
      * Requires the latest xalan.jar xercesImpl.jar and xml-apis.jar (implementing XML Schema v1.1) in the java.endorsed.dirs
      * 
      * @param configFile a config file to validate
+     * @return true if the given xml is valid
      * @throws FileNotFoundException
      */
     public boolean validateXml(File configFile) throws FileNotFoundException {
@@ -66,7 +67,11 @@ public class JobConfig {
     }
 
     /**
-     * @param configContent
+     * Validates an XML config file using an xml schema
+     * Requires the latest xalan.jar xercesImpl.jar and xml-apis.jar (implementing XML Schema v1.1) in the java.endorsed.dirs
+     * 
+     * @param configContent a xml string to validate
+     * @return true if the given xml is valid
      */
     public boolean validateXml(String configContent) {
 
@@ -75,12 +80,13 @@ public class JobConfig {
     }
     
     /**
-     * @param configContent
-     * @return
+     * Validates an XML config file using an xml schema
+     * Requires the latest xalan.jar xercesImpl.jar and xml-apis.jar (implementing XML Schema v1.1) in the java.endorsed.dirs
+     * 
+     * @param configContent InputStream containing the xml data to validate
+     * @return true if the given xml is valid
      */
     public boolean validateXml(InputStream configContent) {
-        
-        // TODO find a way to embed the java.endorsed.dirs definition in the jar, if possible. For the moment, we need to launch with -Djava.endorsed.dirs=lib/endorsed
         
         StreamSource[] schemaDocuments = new StreamSource[] {new StreamSource("resources/jobconfig.xsd")};
         Source instanceDocument = new StreamSource(configContent);
@@ -92,13 +98,15 @@ public class JobConfig {
             Validator v = s.newValidator();
             v.validate(instanceDocument);
         } catch (SAXException e) {
-            System.err.println("Failed loading XML Schema file for config file");
+            Hadoopizer.logger.warning("Invalid config XML: "+e.getMessage());
             e.printStackTrace();
-            System.exit(1);
+            return false;
         } catch (IOException e) {
+            Hadoopizer.logger.warning("Failed reading XML: "+e.getMessage());
             e.printStackTrace();
-            System.exit(1);
+            return false;
         }
+        
         return true;
     }
     
