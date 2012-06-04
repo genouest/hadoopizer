@@ -263,7 +263,7 @@ public class Hadoopizer {
         DistributedCache.createSymlink(jobConf);
 
         // Create the job and its name
-        Job job = new Job(jobConf, "Hadoopizer job"); // TODO find a better name (config? binary name?)
+        Job job = new Job(jobConf, jobConf.get("hadoopizer.job.name"));
 
         job.setJarByClass(Hadoopizer.class);
         
@@ -319,6 +319,7 @@ public class Hadoopizer {
         jobConf.set("hadoopizer.temp.input.header.file", cacheDir.toString() + Path.SEPARATOR + "temp_input_header_file.txt"); // TODO document this
         jobConf.set("hadoopizer.temp.output.header.file", cacheDir.toString() + Path.SEPARATOR  + "temp_output_header_file.txt"); // TODO document this
         jobConf.set("hadoopizer.binaries.link.name", "binaries");
+        jobConf.set("hadoopizer.job.name", "Hadoopizer job");
         
         // Then load other options from job file (overriding if needed)
         for (Map.Entry<String, String> e : config.getHadoopConfig().entrySet()) {
