@@ -12,16 +12,5 @@
             <fileset dir="/udd/abretaud/workspace/hadoopizer" includes="resources/*"/>
             <metainf dir="/udd/abretaud/workspace/hadoopizer/META-INF"/>
         </jar>
-        <delete dir="/udd/abretaud/hadoopizer_latest_lib"/>
-        <mkdir dir="/udd/abretaud/hadoopizer_latest_lib"/>
-        <copy file="/udd/abretaud/workspace/hadoopizer/lib/hadoop-core-1.0.2.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
-        <copy file="/udd/abretaud/workspace/hadoopizer/lib/commons-logging-1.1.1.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
-        <copy file="/udd/abretaud/workspace/hadoopizer/lib/commons-configuration-1.6.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
-        <copy file="/udd/abretaud/workspace/hadoopizer/lib/commons-lang-2.4.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
-        <copy file="/udd/abretaud/workspace/hadoopizer/lib/jackson-core-asl-1.8.8.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
-        <copy file="/udd/abretaud/workspace/hadoopizer/lib/jackson-mapper-asl-1.8.8.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
-        <copy file="/udd/abretaud/workspace/hadoopizer/lib/common-codec.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
-        <copy file="/udd/abretaud/workspace/hadoopizer/lib/common-compress.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
-        <copy file="/udd/abretaud/workspace/hadoopizer/lib/commons-cli.jar" todir="/udd/abretaud/hadoopizer_latest_lib"/>
     </target>
 </project>
