@@ -321,6 +321,7 @@ public class Hadoopizer {
         jobConf.set("hadoopizer.binaries.link.name", "binaries");
         jobConf.set("hadoopizer.job.name", "Hadoopizer job");
         jobConf.set("hadoopizer.shell.interpreter", "#!/bin/bash");
+        jobConf.set("hadoopizer.static.data.link.prefix", "static_data__");
         
         // Then load other options from job file (overriding if needed)
         for (Map.Entry<String, String> e : config.getHadoopConfig().entrySet()) {
@@ -359,7 +360,7 @@ public class Hadoopizer {
 
         // Add a fragment to the uri: hadoop will automatically create a symlink in the work dir pointing to this file
         // Don't add the fragment to hdfsPath because it would be encoded in a strange way
-        URI hdfsUri = URI.create(hdfsPath.toString() + "#static_data__" + fileId + "__" + localPath.getName());
+        URI hdfsUri = URI.create(hdfsPath.toString() + "#" + jobConf.get("hadoopizer.static.data.link.prefix") + fileId + "__" + localPath.getName());
         DistributedCache.addCacheFile(hdfsUri, jobConf);
     }
     

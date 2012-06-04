@@ -45,7 +45,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         workDir = workDir.getAbsoluteFile();
         File[] workFiles = workDir.listFiles();
         Hadoopizer.logger.info("Looking for static input files in work dir: " + workDir.getAbsolutePath());
-        Pattern p = Pattern.compile("static_data__(.*)__.*"); // FIXME bouh, hard coded
+        Pattern p = Pattern.compile(conf.get("hadoopizer.static.data.link.prefix")+"(.*)__.*");
         Matcher m;
         String fileId;
         for (int i = 0; i < workFiles.length; i++) {
@@ -88,8 +88,6 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         
         writer.close(context);
         
-        // TODO maybe add a lock (optional?) to make sure only 1 command running at the same time on each node. This is done by eoulsan, but not necessarily useful.
-
         context.setStatus("Running command");
 
         // Preparing output file
