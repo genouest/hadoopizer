@@ -87,7 +87,7 @@ public class SAMRecordReader extends HadoopizerRecordReader<Text, Text> {
             
             if (!nextLine.startsWith("@")) {
                 headerFinished();
-                if (newLine.getLength() <= 0) // TODO test with empty lines
+                if (newLine.getLength() <= 0) // TODO  // FIXME fails when encountering empty lines
                     return false;
                 
                 foundRecord = true;

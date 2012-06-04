@@ -113,7 +113,7 @@ public class FastqRecordReader extends HadoopizerRecordReader<Text, Text> {
 
         Text newLine = new Text("");
         pos += lineReader.readLine(newLine);
-        if (newLine.getLength() > 0)
+        if (newLine.getLength() > 0) // FIXME fails when encountering empty lines?
             currentRecord.add(newLine.toString());
     }
     

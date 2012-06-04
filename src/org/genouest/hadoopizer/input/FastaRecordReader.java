@@ -91,7 +91,7 @@ public class FastaRecordReader extends HadoopizerRecordReader<Text, Text> {
         boolean foundHeader = false;
         boolean noDataLeft = false;
 
-        while (!foundHeader && !noDataLeft) { // FIXME check what happens with empty lines
+        while (!foundHeader && !noDataLeft) { // FIXME fails when encountering empty lines
             pos += lineReader.readLine(newLine);
             nextLine = newLine.toString();
             noDataLeft = newLine.getLength() <= 0;
