@@ -61,9 +61,9 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
 
         // Write data chunk to a temporary input file
         // This input file will be used in the command line launched in the cleanup step
-        inputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "input", ".chunk");
         
         HadoopizerOutputFormat<?, ?> outf = config.getSplittableInput().getFileOutputFormat();
+        inputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "input", "."+outf.getExtension());
         
         // We want to add the header from input file to each chunk file
         Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file"));

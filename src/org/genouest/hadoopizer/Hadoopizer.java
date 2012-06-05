@@ -179,7 +179,7 @@ public class Hadoopizer {
             fs.copyFromLocalFile(false, true, archPath, hdfsPath);
         }
         else {
-            // TODO compatibility with other protocols??
+            // TODO compatibility with other protocols: s3, http, ftp, ssh, hdfs
         }
         
         URI hdfsUri = URI.create(hdfsPath.toString() + "#" + jobConf.get("hadoopizer.binaries.link.name"));
