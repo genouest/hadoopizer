@@ -54,7 +54,7 @@ public class FastaRecordReader extends HadoopizerRecordReader<Text, Text> {
         if (codec != null) {
             // Input file is compressed: it is not splitted => no need to seek
             lineReader = new LineReader(codec.createInputStream(fsin), job);
-            end = Long.MAX_VALUE; // TODO see if it works with splittable compressed files (lzo?)
+            end = Long.MAX_VALUE;
         }
         else {
             lineReader = new LineReader(fsin, job);
