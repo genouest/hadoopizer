@@ -436,7 +436,7 @@ public class JobConfig {
             finalCommand = finalCommand.replaceAll("\\$\\{" + in.getId() + "\\}", in.getLocalPath());
         }
 
-        if (jobOutput.getLocalPath().isEmpty()) // FIXME handle other protocols (eg upload output to s3, hdfs, whatever)
+        if (jobOutput.getLocalPath().isEmpty()) // TODO handle other protocols (eg upload output to s3, hdfs, whatever)
             throw new RuntimeException("Unable to generate command line: the '" + jobOutput.getId() + "' output local path is empty.");
 
         finalCommand = finalCommand.replaceAll("\\$\\{" + jobOutput.getId() + "\\}", jobOutput.getLocalPath());

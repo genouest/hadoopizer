@@ -286,13 +286,13 @@ public class Hadoopizer {
         job.setMapperClass(GenericMapper.class);
 
         // Set the reducer class
-        //job.setReducerClass(GenericReducer.class); // FIXME create a specific one if some outputs types can be reduced before writing
+        //job.setReducerClass(GenericReducer.class); // TODO create a specific one if some outputs types can be reduced before writing
 
         // Set the output key class
-        job.setOutputKeyClass(Text.class); // FIXME will we need another type some day?
+        job.setOutputKeyClass(Text.class); // TODO will we need another type some day?
 
         // Set the output value class
-        job.setOutputValueClass(Text.class); // FIXME  will we need another type some day?
+        job.setOutputValueClass(Text.class); // TODO  will we need another type some day?
 
         // Set output path
         FileOutputFormat.setOutputPath(job, new Path(config.getJobOutput().getUrl()));

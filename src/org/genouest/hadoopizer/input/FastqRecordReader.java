@@ -24,6 +24,8 @@ public class FastqRecordReader extends HadoopizerRecordReader<Text, Text> {
     private long start;
     private long end;
     private long pos;
+    
+    private boolean reachedEof = false;
 
     private LineReader lineReader;
     private ArrayList<String> currentRecord = new ArrayList<String>();
@@ -84,21 +86,24 @@ public class FastqRecordReader extends HadoopizerRecordReader<Text, Text> {
         currentRecord.clear();
         
         Text newLine = new Text("");
-        pos += lineReader.readLine(newLine);
-        if (newLine.getLength() > 0)
-            currentRecord.add(newLine.toString());
         
-        pos += lineReader.readLine(newLine);
-        if (newLine.getLength() > 0)
-            currentRecord.add(newLine.toString());
+        int read;
+        int foundLines = 0;
         
-        pos += lineReader.readLine(newLine);
-        if (newLine.getLength() > 0)
-            currentRecord.add(newLine.toString());
-        
-        pos += lineReader.readLine(newLine);
-        if (newLine.getLength() > 0)
-            currentRecord.add(newLine.toString());
+        while (foundLines < 4) {
+            read = lineReader.readLine(newLine);
+            if (read > 0) {
+                pos += read;
+                if (newLine.getLength() > 0) {
+                    currentRecord.add(newLine.toString());
+                    foundLines++;
+                }
+            }
+            else if (read == 0) {
+                reachedEof = true;
+                break;
+            }
+        }
     }
 
     /**
@@ -112,15 +117,30 @@ public class FastqRecordReader extends HadoopizerRecordReader<Text, Text> {
             currentRecord.remove(0);
 
         Text newLine = new Text("");
-        pos += lineReader.readLine(newLine);
-        if (newLine.getLength() > 0) // FIXME fails when encountering empty lines?
-            currentRecord.add(newLine.toString());
+        
+        int read;
+        int foundLines = 0;
+
+        while (foundLines < 1) {
+            read = lineReader.readLine(newLine);
+            if (read > 0) {
+                pos += read;
+                if (newLine.getLength() > 0) {
+                    currentRecord.add(newLine.toString());
+                    foundLines++;
+                }
+            }
+            else if (read == 0) {
+                reachedEof = true;
+                break;
+            }
+        }
     }
     
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
         
-        if (pos >= end) // Reached the end of split
+        if ((pos >= end) || reachedEof) // Reached the end of split
             return false;
         
         findPotentialFastQRecord();
@@ -151,7 +171,7 @@ public class FastqRecordReader extends HadoopizerRecordReader<Text, Text> {
                 tries++;
             }
         }
-
+        
         // Error parsing fastq if we get there
         throw new IOException("Failed to parse FastQ file");
     }

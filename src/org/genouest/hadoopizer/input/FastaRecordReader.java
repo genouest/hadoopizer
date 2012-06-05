@@ -25,6 +25,7 @@ public class FastaRecordReader extends HadoopizerRecordReader<Text, Text> {
 
     private LineReader lineReader;
     private String nextLine = "";
+    private boolean reachedEof = false;
 
     private Text recordKey = new Text();
     private Text recordValue = new Text();
@@ -90,17 +91,21 @@ public class FastaRecordReader extends HadoopizerRecordReader<Text, Text> {
         Text newLine = new Text("");
         boolean foundHeader = false;
         boolean noDataLeft = false;
+        int read;
 
-        while (!foundHeader && !noDataLeft) { // FIXME fails when encountering empty lines
-            pos += lineReader.readLine(newLine);
+        while (!foundHeader && !noDataLeft) {
+            read = lineReader.readLine(newLine);
+            pos += read;
+            noDataLeft = (read == 0);
             nextLine = newLine.toString();
-            noDataLeft = newLine.getLength() <= 0;
 
-            if (!nextLine.startsWith(">"))
-                sequence += nextLine;
-            else
+            if (nextLine.startsWith(">"))
                 foundHeader = true;
+            else if (!nextLine.isEmpty())
+                sequence += nextLine;
         }
+        
+        reachedEof = noDataLeft;
 
         return sequence;
     }
@@ -108,7 +113,7 @@ public class FastaRecordReader extends HadoopizerRecordReader<Text, Text> {
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
         
-        if (pos >= end) // Reached the end of split
+        if ((pos >= end) || reachedEof) // Reached the end of split
             return false;
         
         if (nextLine.startsWith(">")) {
@@ -117,9 +122,6 @@ public class FastaRecordReader extends HadoopizerRecordReader<Text, Text> {
             recordValue.set(readUntilNextRecord());
             
             return true;
-        }
-        else if (nextLine.isEmpty() && (pos > start)) {
-            return false;
         }
         else {
             // Means we didn't call readUntilNextRecord before which is not supposed to happen

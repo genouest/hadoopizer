@@ -82,15 +82,19 @@ public class SAMRecordReader extends HadoopizerRecordReader<Text, Text> {
         
         while (!foundRecord) {
             Text newLine = new Text("");
-            pos += lineReader.readLine(newLine);
+            int read = lineReader.readLine(newLine);
+            
+            if (read == 0)
+                return false;
+            
+            pos += read;
             nextLine = newLine.toString();
             
             if (!nextLine.startsWith("@")) {
-                headerFinished();
-                if (newLine.getLength() <= 0) // TODO  // FIXME fails when encountering empty lines
-                    return false;
-                
-                foundRecord = true;
+                if (newLine.getLength() > 0) {
+                    headerFinished();
+                    foundRecord = true;
+                }
             }
             else {
                 // Found a SAM header, write it to a temp file if needed
