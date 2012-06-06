@@ -1,6 +1,8 @@
 package org.genouest.hadoopizer.output;
 
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -87,4 +89,32 @@ public abstract class HadoopizerOutputFormat<K, V> extends FileOutputFormat<K, V
      * @throws InterruptedException
      */
     public abstract RecordWriter<K, V> getRecordWriter(TaskAttemptContext context, Path path, CompressionCodec codec) throws IOException, InterruptedException;
+    
+    /**
+     * Get the class of the output keys
+     * 
+     * @return class of the output keys
+     */
+    public Class<?> getOutputKeyClass() {
+        
+        Type[] params = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments();
+        if (params.length != 2)
+            return null;
+
+        return (Class<? >)params[0];
+    }
+
+    /**
+     * Get the class of the output values
+     * 
+     * @return class of the output values
+     */
+    public Class<?> getOutputValueClass() {
+
+        Type[] params = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments();
+        if (params.length != 2)
+            return null;
+
+        return (Class<? >) params[1];
+    }
 }

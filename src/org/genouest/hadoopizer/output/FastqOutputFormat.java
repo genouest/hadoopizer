@@ -21,7 +21,7 @@ public class FastqOutputFormat extends HadoopizerOutputFormat<Text, Text> {
         
         FileSystem fs = path.getFileSystem(conf);
 
-        FSDataOutputStream out = fs.create(path, true);
+        FSDataOutputStream out = fs.create(path, true); // FIXME permission problem when writing to ouput dir: it is written by mapred user
         if (codec == null) {
             return new FastqRecordWriter(out, context, getHeaderTempFile(conf));
         }

@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -23,11 +22,11 @@ import org.genouest.hadoopizer.JobConfig;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 
-public class GenericMapper extends Mapper<Text, Text, Text, Text> { 
+public class GenericMapper<KI, VI, KO, VO> extends Mapper<KI, VI, KO, VO> { 
 
     private JobConfig config;
     private File inputFile;
-    private RecordWriter<Text, Text> writer;
+    private RecordWriter<KI, VI> writer;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -69,7 +68,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file"));
         outf.setHeaderTempFile(headerFile);
         
-        writer = (RecordWriter<Text, Text>) outf.getRecordWriter(context, new Path("file:"+inputFile.getAbsolutePath()), null);
+        writer = (RecordWriter<KI, VI>) outf.getRecordWriter(context, new Path("file:"+inputFile.getAbsolutePath()), null);
         
         Hadoopizer.logger.info("Writing input chunk to '" + inputFile.getAbsolutePath() + "' with OutputFormat class '" + writer.getClass().getCanonicalName() + "'");
 
@@ -78,7 +77,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
 
 
     @Override
-    protected void map(Text key, Text value, Context context) throws IOException, InterruptedException {
+    protected void map(KI key, VI value, Context context) throws IOException, InterruptedException {
         
         writer.write(key, value);
     }
@@ -148,7 +147,7 @@ public class GenericMapper extends Mapper<Text, Text, Text, Text> {
         
         InputSplit split = new FileSplit(new Path(outputFile.toURI()), 0, outputFile.length(), null);
         @SuppressWarnings("unchecked")
-        RecordReader<Text, Text> reader = (RecordReader<Text, Text>) inf.createRecordReader(split, context);
+        RecordReader<KO, VO> reader = (RecordReader<KO, VO>) inf.createRecordReader(split, context);
         reader.initialize(split, context);
         while (reader.nextKeyValue()) {
             context.write(reader.getCurrentKey(), reader.getCurrentValue());

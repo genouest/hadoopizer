@@ -21,12 +21,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
+import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.mappers.GenericMapper;
+import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 
 public class Hadoopizer {
 
@@ -268,10 +269,10 @@ public class Hadoopizer {
         job.setJarByClass(Hadoopizer.class);
         
         // Define input and output data format
-        FileInputFormat<?, ?> iFormat = config.getSplittableInput().getFileInputFormat();
+        HadoopizerInputFormat<?, ?> iFormat = config.getSplittableInput().getFileInputFormat();
         job.setInputFormatClass(iFormat.getClass());
         
-        FileOutputFormat<?, ?> oFormat = config.getJobOutput().getFileOutputFormat();
+        HadoopizerOutputFormat<?, ?> oFormat = config.getJobOutput().getFileOutputFormat();
         job.setOutputFormatClass(oFormat.getClass());
         
         // Output compression if asked
@@ -289,11 +290,11 @@ public class Hadoopizer {
         //job.setReducerClass(GenericReducer.class); // TODO create a specific one if some outputs types can be reduced before writing
 
         // Set the output key class
-        job.setOutputKeyClass(Text.class); // TODO will we need another type some day?
+        job.setOutputKeyClass(oFormat.getOutputKeyClass());
 
         // Set the output value class
-        job.setOutputValueClass(Text.class); // TODO  will we need another type some day?
-
+        job.setOutputValueClass(oFormat.getOutputValueClass());
+        
         // Set output path
         FileOutputFormat.setOutputPath(job, new Path(config.getJobOutput().getUrl()));
 
