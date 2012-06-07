@@ -26,7 +26,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
-import org.genouest.hadoopizer.mappers.GenericMapper;
+import org.genouest.hadoopizer.mappers.ShellMapper;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 
 public class Hadoopizer {
@@ -284,7 +284,7 @@ public class Hadoopizer {
         FileInputFormat.setInputPaths(job, inputPath);
 
         // Set the Mapper class
-        job.setMapperClass(GenericMapper.class); // TODO rename genericmapper and allow to use different mappers
+        job.setMapperClass(ShellMapper.class); // TODO allow to use different mappers
 
         // Set the reducer class
         //job.setReducerClass(GenericReducer.class); // TODO create a specific one if some outputs types can be reduced before writing

@@ -22,7 +22,7 @@ import org.genouest.hadoopizer.JobConfig;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 
-public class GenericMapper<KI, VI, KO, VO> extends Mapper<KI, VI, KO, VO> { 
+public class ShellMapper<KI, VI, KO, VO> extends Mapper<KI, VI, KO, VO> { 
 
     private JobConfig config;
     private File inputFile;
