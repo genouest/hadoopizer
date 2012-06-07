@@ -26,7 +26,7 @@
         <!-- any other protocol? -->
     </input>
     
-    <output id="res"> <!-- multiple output is possible -->
+    <output id="res">
         <reducer format="sequence">blast</reducer><!-- each blast output line is transfered as a key/value + the output file is in SequenceFile format -->
         <!--reducer>blast</reducer--><!-- each blast output line is transfered as a key/value + the output file is in blast format -->
         <!--reducer>text</reducer--><!-- all the output files are merged in no specific order in a text file, keys/values given to reducer contain hdfs path -->

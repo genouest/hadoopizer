@@ -41,9 +41,9 @@ import org.xml.sax.SAXException;
 public class JobConfig {
 
     private String command;
-    private JobInput splittableInput;
+    private JobInput splittableInput; // TODO support paired end (or test+control for findpeaks)
     private HashSet<JobInput> staticInputs;
-    private JobOutput jobOutput;
+    private JobOutput jobOutput; // TODO allow merging of multiple outputs
     private HashMap<String, String> hadoopConfig;
 
     public JobConfig() {
