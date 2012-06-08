@@ -5,10 +5,11 @@ import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
-public class SAMRecordWriter extends HadoopizerRecordWriter<Text, Text> {
+public class SAMRecordWriter extends HadoopizerRecordWriter {
 
     private DataOutputStream out;
     private Path headerTempFile;
@@ -24,14 +25,14 @@ public class SAMRecordWriter extends HadoopizerRecordWriter<Text, Text> {
     }
 
     @Override
-    public void write(Text key, Text value) throws IOException, InterruptedException {
+    public void write(ObjectWritableComparable key, ObjectWritable value) throws IOException, InterruptedException {
 
         if (headerTempFile != null) {
             writeHeader(headerTempFile, out, conf);
             headerTempFile = null;
         }
         
-        String line = key.toString() + "\t" + value.toString() + "\n";
+        String line = key.get().toString() + "\t" + value.get().toString() + "\n";
         out.write(line.getBytes());
     }
 

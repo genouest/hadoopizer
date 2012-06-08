@@ -7,6 +7,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
@@ -14,12 +15,14 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.LineReader;
+import org.apache.hadoop.util.ReflectionUtils;
 import org.genouest.hadoopizer.Hadoopizer;
+import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
 /**
  * Inspired by org.apache.hadoop.mapreduce.lib.input.LineRecordReader
  */
-public class FastqRecordReader extends HadoopizerRecordReader<Text, Text> {
+public class FastqRecordReader extends HadoopizerRecordReader {
 
     private long start;
     private long end;
@@ -29,6 +32,7 @@ public class FastqRecordReader extends HadoopizerRecordReader<Text, Text> {
 
     private LineReader lineReader;
     private ArrayList<String> currentRecord = new ArrayList<String>();
+    Configuration conf;
 
     private Text recordKey = new Text();
     private Text recordValue = new Text();
@@ -42,25 +46,25 @@ public class FastqRecordReader extends HadoopizerRecordReader<Text, Text> {
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
 
         FileSplit fileSplit = (FileSplit) split;
-        Configuration job = context.getConfiguration();
+        conf = context.getConfiguration();
 
         start = fileSplit.getStart();
         end = start + fileSplit.getLength();
         
         Path path = fileSplit.getPath();
-        CompressionCodecFactory compressionCodecs = new CompressionCodecFactory(job);
+        CompressionCodecFactory compressionCodecs = new CompressionCodecFactory(conf);
         CompressionCodec codec = compressionCodecs.getCodec(path);
         
-        FileSystem fs = path.getFileSystem(job);
+        FileSystem fs = path.getFileSystem(conf);
         FSDataInputStream fsin = fs.open(path);
         
         if (codec != null) {
             // Input file is compressed: it is not splitted => no need to seek
-            lineReader = new LineReader(codec.createInputStream(fsin), job);
+            lineReader = new LineReader(codec.createInputStream(fsin), conf);
             end = Long.MAX_VALUE;
         }
         else {
-            lineReader = new LineReader(fsin, job);
+            lineReader = new LineReader(fsin, conf);
             if (start != 0) {
                 --start;
                 fsin.seek(start);
@@ -177,15 +181,26 @@ public class FastqRecordReader extends HadoopizerRecordReader<Text, Text> {
     }
 
     @Override
-    public Text getCurrentKey() throws IOException, InterruptedException {
+    public ObjectWritableComparable getCurrentKey() throws IOException, InterruptedException {
 
-        return recordKey;
+        ObjectWritableComparable key = ReflectionUtils.newInstance(ObjectWritableComparable.class, conf);
+        key.set("", recordKey);
+        return key;
+    }
+    
+    @Override
+    public ObjectWritableComparable getCurrentKey(String id) throws IOException, InterruptedException {
+
+        
+        ObjectWritableComparable key = ReflectionUtils.newInstance(ObjectWritableComparable.class, conf);
+        key.set(id, recordKey);
+        return key;
     }
 
     @Override
-    public Text getCurrentValue() throws IOException, InterruptedException {
+    public ObjectWritable getCurrentValue() throws IOException, InterruptedException {
 
-        return recordValue;
+        return new ObjectWritable(recordValue);
     }
 
     @Override

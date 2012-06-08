@@ -36,7 +36,7 @@ public class JobOutput {
     }
 
     /**
-     * Get the id of this job output as declared in the xml config file
+     * Get the id of this conf output as declared in the xml config file
      * 
      * @return the id
      */
@@ -122,8 +122,8 @@ public class JobOutput {
      * 
      * @return a FileOutputFormat corresponding to the reducerId defined for this JobOutput
      */
-    public HadoopizerOutputFormat<?, ?> getFileOutputFormat() {
-        for (HadoopizerOutputFormat<?, ?> outputFormat : ServiceLoader.load(HadoopizerOutputFormat.class)) {
+    public HadoopizerOutputFormat getFileOutputFormat() {
+        for (HadoopizerOutputFormat outputFormat : ServiceLoader.load(HadoopizerOutputFormat.class)) {
             if (outputFormat.getId().equalsIgnoreCase(getReducerId()) && (FileOutputFormat.class.isAssignableFrom(outputFormat.getClass())))
                 return outputFormat;
         }
@@ -136,8 +136,8 @@ public class JobOutput {
      * 
      * @return a FileInputFormat corresponding to the reducerId defined for this JobOutput
      */
-    public HadoopizerInputFormat<?, ?> getFileInputFormat() {
-        for (HadoopizerInputFormat<?, ?> inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
+    public HadoopizerInputFormat getFileInputFormat() {
+        for (HadoopizerInputFormat inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
             if (inputFormat.getId().equalsIgnoreCase(getReducerId()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
                 return inputFormat;
         }

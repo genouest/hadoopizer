@@ -27,7 +27,7 @@ public class JobInput {
     }
 
     /**
-     * Get the id of this job input as declared in the xml config file
+     * Get the id of this conf input as declared in the xml config file
      * 
      * @return the id
      */
@@ -173,8 +173,8 @@ public class JobInput {
      * 
      * @return a FileInputFormat corresponding to the splitter id defined for this JobInput
      */
-    public HadoopizerInputFormat<?, ?> getFileInputFormat() {
-        for (HadoopizerInputFormat<?, ?> inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
+    public HadoopizerInputFormat getFileInputFormat() {
+        for (HadoopizerInputFormat inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
             if (inputFormat.getId().equalsIgnoreCase(getSplitterId()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
                 return inputFormat;
         }
@@ -187,8 +187,8 @@ public class JobInput {
      * 
      * @return a FileOutputFormat corresponding to the splitter id defined for this JobInput
      */
-    public HadoopizerOutputFormat<?, ?> getFileOutputFormat() {
-        for (HadoopizerOutputFormat<?, ?> outputFormat : ServiceLoader.load(HadoopizerOutputFormat.class)) {
+    public HadoopizerOutputFormat getFileOutputFormat() {
+        for (HadoopizerOutputFormat outputFormat : ServiceLoader.load(HadoopizerOutputFormat.class)) {
             if (outputFormat.getId().equalsIgnoreCase(getSplitterId()) && (FileOutputFormat.class.isAssignableFrom(outputFormat.getClass())))
                 return outputFormat;
         }

@@ -43,12 +43,13 @@ public class JobConfig {
     private String command;
     private JobInput splittableInput; // TODO support paired end (or test+control for findpeaks)
     private HashSet<JobInput> staticInputs;
-    private JobOutput jobOutput; // TODO allow merging of multiple outputs
+    private HashSet<JobOutput> jobOutputs; // TODO allow merging of multiple outputs
     private HashMap<String, String> hadoopConfig;
 
     public JobConfig() {
 
         staticInputs = new HashSet<JobInput>();
+        jobOutputs = new HashSet<JobOutput>();
         hadoopConfig = new HashMap<String, String>();
     }
 
@@ -111,7 +112,7 @@ public class JobConfig {
     }
     
     /**
-     * Load the job configuration from an xml file
+     * Load the conf configuration from an xml file
      * 
      * @param configFile the xml file to load
      * @throws FileNotFoundException
@@ -123,7 +124,7 @@ public class JobConfig {
     }
 
     /**
-     * Load the job configuration from an xml String
+     * Load the conf configuration from an xml String
      * 
      * @param configContent the xml String
      */
@@ -134,7 +135,7 @@ public class JobConfig {
     }
     
     /**
-     * Load the job configuration from an InputStream
+     * Load the conf configuration from an InputStream
      * 
      * @param configContent an InputStream object containing XML data
      */
@@ -224,47 +225,51 @@ public class JobConfig {
             System.exit(1);
         }
 
-        if (outputs.getLength() != 1) {
-            System.err.println("The config file should contain exactly one output element");
+        if (outputs.getLength() < 1) {
+            System.err.println("The config file should contain at least one output element");
             System.exit(1);
         }
 
-        Element output = (Element) outputs.item(0);
+        for(int i = 0; i < outputs.getLength(); i++) {
+            Element output = (Element) outputs.item(i);
 
-        jobOutput = new JobOutput(output.getAttribute("id"));
-        Element reducer = (Element) output.getElementsByTagName("reducer").item(0);
-        jobOutput.setReducerId(reducer.getTextContent());
-        if (reducer.hasAttribute("format") && reducer.getAttribute("format").equalsIgnoreCase("sequence")) {
-            // The output needs to be stored as hadoop SequenceFile for reuse in a future hadoop job
-            jobOutput.setSequenceOutput(true);
-        }
-        // Output compressor
-        Element compressor = (Element) output.getElementsByTagName("compressor").item(0);
-        if (compressor != null) {
-            String codec = compressor.getTextContent();
-            if (JobOutput.isCompressorSupported(codec)) {
-                Hadoopizer.logger.info("Compressing the output with " + codec);
-                jobOutput.setCompressor(codec);
+            JobOutput jobOutput = new JobOutput(output.getAttribute("id"));
+            Element reducer = (Element) output.getElementsByTagName("reducer").item(0);
+            jobOutput.setReducerId(reducer.getTextContent());
+            if (reducer.hasAttribute("format") && reducer.getAttribute("format").equalsIgnoreCase("sequence")) {
+                // The output needs to be stored as hadoop SequenceFile for reuse in a future hadoop conf
+                jobOutput.setSequenceOutput(true);
             }
-            else {
-                System.err.println("Unsupported output compressor '" + codec + "' (allowed: " + JobOutput.getSupportedCompressor() + ")");
+            // Output compressor
+            Element compressor = (Element) output.getElementsByTagName("compressor").item(0);
+            if (compressor != null) {
+                String codec = compressor.getTextContent();
+                if (JobOutput.isCompressorSupported(codec)) {
+                    Hadoopizer.logger.info("Compressing the output with " + codec);
+                    jobOutput.setCompressor(codec);
+                }
+                else {
+                    System.err.println("Unsupported output compressor '" + codec + "' (allowed: " + JobOutput.getSupportedCompressor() + ")");
+                    System.exit(1);
+                }
+            }
+    
+            String url = output.getElementsByTagName("url").item(0).getTextContent();
+            if (url.startsWith("/"))
+                url = "file:" + url;
+    
+            try {
+                jobOutput.setUrl(new URI(url));
+            } catch (URISyntaxException e) {
+                System.err.println("Wrong URI format in config file: "+output.getElementsByTagName("url").item(0).getTextContent());
+                e.printStackTrace();
                 System.exit(1);
             }
+            
+            jobOutputs.add(jobOutput);
+            
+            Hadoopizer.logger.info("Using reducer '"+jobOutput.getReducerId()+"' for output '"+jobOutput.getId()+"' ("+jobOutput.getUrl()+")");
         }
-
-        String url = output.getElementsByTagName("url").item(0).getTextContent();
-        if (url.startsWith("/"))
-            url = "file:" + url;
-
-        try {
-            jobOutput.setUrl(new URI(url));
-        } catch (URISyntaxException e) {
-            System.err.println("Wrong URI format in config file: "+output.getElementsByTagName("url").item(0).getTextContent());
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        Hadoopizer.logger.info("Using reducer '"+jobOutput.getReducerId()+"' for output '"+jobOutput.getId()+"' ("+jobOutput.getUrl()+")");
         
         // Load hadoop specific configuration
         NodeList hadoops = null;
@@ -286,9 +291,9 @@ public class JobConfig {
     }
 
     /**
-     * Generate and XML representation of the current job config
+     * Generate and XML representation of the current conf config
      * 
-     * @return an XML string representing the job config
+     * @return an XML string representing the conf config
      * @throws ParserConfigurationException
      */
     public String dumpXml() throws ParserConfigurationException {
@@ -346,26 +351,28 @@ public class JobConfig {
         }
 
         // Output
-        Element outputElement = doc.createElement("output");
-        rootElement.appendChild(outputElement);
-        outputElement.setAttribute("id", jobOutput.getId());
-
-        Element splitter = doc.createElement("reducer");
-        splitter.appendChild(doc.createTextNode(jobOutput.getReducerId()));
-        if (jobOutput.isSequenceOutput()) {
-            splitter.setAttribute("format", "sequence");
+        for (JobOutput jobOutput : jobOutputs) {
+            Element outputElement = doc.createElement("output");
+            rootElement.appendChild(outputElement);
+            outputElement.setAttribute("id", jobOutput.getId());
+    
+            Element splitter = doc.createElement("reducer");
+            splitter.appendChild(doc.createTextNode(jobOutput.getReducerId()));
+            if (jobOutput.isSequenceOutput()) {
+                splitter.setAttribute("format", "sequence");
+            }
+            outputElement.appendChild(splitter);
+    
+            if (jobOutput.hasCompressor()) {
+                Element compressor = doc.createElement("compressor");
+                compressor.appendChild(doc.createTextNode(jobOutput.getCompressorName()));
+                outputElement.appendChild(compressor);
+            }
+    
+            Element outUrlElement = doc.createElement("url");
+            outputElement.appendChild(outUrlElement);
+            outUrlElement.appendChild(doc.createTextNode(jobOutput.getUrl().toString()));
         }
-        outputElement.appendChild(splitter);
-
-        if (jobOutput.hasCompressor()) {
-            Element compressor = doc.createElement("compressor");
-            compressor.appendChild(doc.createTextNode(jobOutput.getCompressorName()));
-            outputElement.appendChild(compressor);
-        }
-
-        Element outUrlElement = doc.createElement("url");
-        outputElement.appendChild(outUrlElement);
-        outUrlElement.appendChild(doc.createTextNode(jobOutput.getUrl().toString()));
         
         // Hadoop config
         if (hadoopConfig.size() > 0) {
@@ -436,16 +443,18 @@ public class JobConfig {
             finalCommand = finalCommand.replaceAll("\\$\\{" + in.getId() + "\\}", in.getLocalPath());
         }
 
-        if (jobOutput.getLocalPath().isEmpty()) // TODO handle other protocols (eg upload output to s3, hdfs, whatever)
-            throw new RuntimeException("Unable to generate command line: the '" + jobOutput.getId() + "' output local path is empty.");
+        for (JobOutput jobOutput : jobOutputs) {
+            if (jobOutput.getLocalPath().isEmpty()) // TODO handle other protocols (eg upload output to s3, hdfs, whatever)
+                throw new RuntimeException("Unable to generate command line: the '" + jobOutput.getId() + "' output local path is empty.");
 
-        finalCommand = finalCommand.replaceAll("\\$\\{" + jobOutput.getId() + "\\}", jobOutput.getLocalPath());
+            finalCommand = finalCommand.replaceAll("\\$\\{" + jobOutput.getId() + "\\}", jobOutput.getLocalPath());
+        }
 
         return finalCommand;
     }
 
     /**
-     * Get the list of JobInput object representing static input files used (but not modified) by the job
+     * Get the list of JobInput object representing static input files used (but not modified) by the conf
      * 
      * @return a Set of JobInput objects
      */
@@ -454,16 +463,16 @@ public class JobConfig {
     }
 
     /**
-     * Get the JobOutput object representing the output file of the job
+     * Get the JobOutput object representing the output file of the conf
      * 
      * @return a JobOutput object
      */
-    public JobOutput getJobOutput() {
-        return jobOutput;
+    public HashSet<JobOutput> getJobOutputs() {
+        return jobOutputs;
     }
 
     /**
-     * Get the JobInput object representing the input file of the job which will be splitted by the hadoop framework
+     * Get the JobInput object representing the input file of the conf which will be splitted by the hadoop framework
      * 
      * @return a JobInput object
      */

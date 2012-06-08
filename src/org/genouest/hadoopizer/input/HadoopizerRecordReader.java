@@ -6,9 +6,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.mapreduce.RecordReader;
+import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
-public abstract class HadoopizerRecordReader<K, V> extends RecordReader<K, V> {
+public abstract class HadoopizerRecordReader extends RecordReader<ObjectWritableComparable, ObjectWritable> {
 
     private Path headerTempFile;
     private FSDataOutputStream headerOut;
@@ -84,4 +86,7 @@ public abstract class HadoopizerRecordReader<K, V> extends RecordReader<K, V> {
         if (headerOut != null)
             headerOut.close();
     }
+
+    // TODO document
+    public abstract ObjectWritableComparable getCurrentKey(String id) throws IOException, InterruptedException;
 }

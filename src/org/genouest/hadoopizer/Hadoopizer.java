@@ -21,13 +21,17 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
+import org.genouest.hadoopizer.io.ObjectWritableComparable;
 import org.genouest.hadoopizer.mappers.ShellMapper;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
+import org.genouest.hadoopizer.reducer.ShellReducer;
 
 public class Hadoopizer {
 
@@ -55,27 +59,27 @@ public class Hadoopizer {
         // Check temp and output dir presence
         app.checkDirs();
         
-        // Prepare a hadoop job
+        // Prepare a hadoop conf
         boolean success = false; 
         try {
             Job job = app.prepareJob();
             success = job.waitForCompletion(true);
         } catch (IOException e) {
-            System.err.println("Failed launching hadoop job");
+            System.err.println("Failed launching hadoop conf");
             e.printStackTrace();
             System.exit(1);
         } catch (InterruptedException e) {
-            System.err.println("Failed launching hadoop job");
+            System.err.println("Failed launching hadoop conf");
             e.printStackTrace();
             System.exit(1);
         } catch (ClassNotFoundException e) {
-            System.err.println("Failed launching hadoop job");
+            System.err.println("Failed launching hadoop conf");
             e.printStackTrace();
             System.exit(1);
         }
 
         if (!success) {
-            logger.severe("The hadoop job failed!");
+            logger.severe("The hadoop conf failed!");
             System.exit(1);
         }
     }
@@ -117,7 +121,7 @@ public class Hadoopizer {
         if (cmdLine.hasOption("h") || !cmdLine.hasOption("c") || !cmdLine.hasOption("w"))
             help(options);
 
-        // Load job config file from xml file
+        // Load conf config file from xml file
         File configFile = new File(cmdLine.getOptionValue("c"));
         if (!configFile.isFile()) {
             System.err.println("Could not read the configuration file: "+configFile.getAbsolutePath());
@@ -221,7 +225,7 @@ public class Hadoopizer {
             System.exit(1);
         }
 
-        Path outputDir = new Path(config.getJobOutput().getUrl());
+        Path outputDir = new Path(((JobOutput) config.getJobOutputs().toArray()[0]).getUrl()); // FIXME use common output dir
         try {
             FileSystem outputFs = outputDir.getFileSystem(jobConf);
             if (outputFs.exists(outputDir)) {
@@ -235,10 +239,10 @@ public class Hadoopizer {
     }
 
     /**
-     * Prepare a ready to use job object based on the config loaded from command line args
+     * Prepare a ready to use conf object based on the config loaded from command line args
      * and xml config file.
      * 
-     * @return a job object ready for execution
+     * @return a conf object ready for execution
      * @throws IOException
      */
     private Job prepareJob() throws IOException {
@@ -263,22 +267,34 @@ public class Hadoopizer {
         // Ensure the files placed in the distributed cache will have symlinks in the work dir
         DistributedCache.createSymlink(jobConf);
 
-        // Create the job and its name
+        // Create the conf and its name
         Job job = new Job(jobConf, jobConf.get("hadoopizer.job.name"));
 
         job.setJarByClass(Hadoopizer.class);
         
         // Define input and output data format
-        HadoopizerInputFormat<?, ?> iFormat = config.getSplittableInput().getFileInputFormat();
+        HadoopizerInputFormat iFormat = config.getSplittableInput().getFileInputFormat();
         job.setInputFormatClass(iFormat.getClass());
         
-        HadoopizerOutputFormat<?, ?> oFormat = config.getJobOutput().getFileOutputFormat();
-        job.setOutputFormatClass(oFormat.getClass());
+
+        HashSet<JobOutput> outputs = config.getJobOutputs();
+        JobOutput cached = null; // FIXME remove this ugly stuff: all outputs should be placed in the same dir, update xml schema 
+        for (JobOutput jobOutput : outputs) {
+            cached = jobOutput;
+            HadoopizerOutputFormat oFormat = jobOutput.getFileOutputFormat();
+            job.setOutputFormatClass(oFormat.getClass());
+            MultipleOutputs.addNamedOutput(job, jobOutput.getId(), oFormat.getClass(), ObjectWritableComparable.class, ObjectWritable.class); // FIXME token must not contain _
+        }
+
+        job.setOutputKeyClass(ObjectWritableComparable.class);
+        
+        job.setOutputValueClass(ObjectWritable.class);
         
         // Output compression if asked
-        FileOutputFormat.setCompressOutput(job, config.getJobOutput().hasCompressor());
-        if (config.getJobOutput().hasCompressor())
-            FileOutputFormat.setOutputCompressorClass(job, config.getJobOutput().getCompressor());
+        // FIXME does it work for multiple?
+        FileOutputFormat.setCompressOutput(job, cached.hasCompressor());
+        if (cached.hasCompressor())
+            FileOutputFormat.setOutputCompressorClass(job, cached.getCompressor());
         
         // Set input path
         FileInputFormat.setInputPaths(job, inputPath);
@@ -287,26 +303,21 @@ public class Hadoopizer {
         job.setMapperClass(ShellMapper.class);
 
         // Set the reducer class
-        //job.setReducerClass(GenericReducer.class); // TODO create a specific one if some outputs types can be reduced before writing
-
-        // Set the output key class
-        job.setOutputKeyClass(oFormat.getOutputKeyClass());
-
-        // Set the output value class
-        job.setOutputValueClass(oFormat.getOutputValueClass());
+        job.setReducerClass(ShellReducer.class); // TODO create a specific one if some outputs types can be reduced before writing
         
         // Set output path
-        FileOutputFormat.setOutputPath(job, new Path(config.getJobOutput().getUrl()));
-
+        // FIXME does it work for multiple?
+        FileOutputFormat.setOutputPath(job, new Path(cached.getUrl()));
+        
         return job;
     }
 
     /**
-     * Load the hadoop options defined in the job config file
+     * Load the hadoop options defined in the conf config file
      */
     private void setHadoopOptions() {
 
-        // Add the job config
+        // Add the conf config
         try {
             jobConf.set("hadoopizer.job.config", config.dumpXml());
         } catch (ParserConfigurationException e) {
@@ -317,14 +328,14 @@ public class Hadoopizer {
         
         // First define some default settings
         Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir")); // Defined from command line
-        jobConf.set("hadoopizer.temp.input.header.file", cacheDir.toString() + Path.SEPARATOR + "temp_input_header_file.txt");
-        jobConf.set("hadoopizer.temp.output.header.file", cacheDir.toString() + Path.SEPARATOR  + "temp_output_header_file.txt");
+        jobConf.set("hadoopizer.temp.input.header.file", cacheDir.toString() + Path.SEPARATOR + "temp_input_header_file.txt"); // FIXME add output id
+        jobConf.set("hadoopizer.temp.output.header.file", cacheDir.toString() + Path.SEPARATOR  + "temp_output_header_file.txt"); // FIXME add output id
         jobConf.set("hadoopizer.binaries.link.name", "binaries");
-        jobConf.set("hadoopizer.job.name", "Hadoopizer job");
+        jobConf.set("hadoopizer.job.name", "Hadoopizer conf");
         jobConf.set("hadoopizer.shell.interpreter", "#!/bin/bash");
         jobConf.set("hadoopizer.static.data.link.prefix", "static_data__");
         
-        // Then load other options from job file (overriding if needed)
+        // Then load other options from conf file (overriding if needed)
         for (Map.Entry<String, String> e : config.getHadoopConfig().entrySet()) {
             jobConf.set(e.getKey(), e.getValue());
         }

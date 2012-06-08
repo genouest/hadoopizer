@@ -1,4 +1,4 @@
-package org.genouest.hadoopizer.mappers;
+package org.genouest.hadoopizer.mappers; // TODO rename package
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -7,34 +7,37 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.JobConfig;
+import org.genouest.hadoopizer.JobOutput;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
+import org.genouest.hadoopizer.input.HadoopizerRecordReader;
+import org.genouest.hadoopizer.io.ObjectWritableComparable;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 
-public class ShellMapper<KI, VI, KO, VO> extends Mapper<KI, VI, KO, VO> { 
+public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable, ObjectWritableComparable, ObjectWritable> { 
 
     private JobConfig config;
     private File inputFile;
-    private RecordWriter<KI, VI> writer;
+    private RecordWriter<ObjectWritableComparable, ObjectWritable> writer;
 
-    @SuppressWarnings("unchecked")
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
 
         Configuration conf = context.getConfiguration();
 
-        // Load hadoopizer job config
+        // Load hadoopizer conf config
         String xmlConfig = conf.get("hadoopizer.job.config");
         config = new JobConfig();
         config.load(xmlConfig);
@@ -61,14 +64,14 @@ public class ShellMapper<KI, VI, KO, VO> extends Mapper<KI, VI, KO, VO> {
         // Write data chunk to a temporary input file
         // This input file will be used in the command line launched in the cleanup step
         
-        HadoopizerOutputFormat<?, ?> outf = config.getSplittableInput().getFileOutputFormat();
+        HadoopizerOutputFormat outf = config.getSplittableInput().getFileOutputFormat();
         inputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "input", "."+outf.getExtension());
         
         // We want to add the header from input file to each chunk file
-        Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file"));
+        Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file")); // FIXME add input id
         outf.setHeaderTempFile(headerFile);
         
-        writer = (RecordWriter<KI, VI>) outf.getRecordWriter(context, new Path("file:"+inputFile.getAbsolutePath()), null);
+        writer = (RecordWriter<ObjectWritableComparable, ObjectWritable>) outf.getRecordWriter(context, new Path("file:"+inputFile.getAbsolutePath()), null);
         
         Hadoopizer.logger.info("Writing input chunk to '" + inputFile.getAbsolutePath() + "' with OutputFormat class '" + writer.getClass().getCanonicalName() + "'");
 
@@ -77,7 +80,7 @@ public class ShellMapper<KI, VI, KO, VO> extends Mapper<KI, VI, KO, VO> {
 
 
     @Override
-    protected void map(KI key, VI value, Context context) throws IOException, InterruptedException {
+    protected void map(ObjectWritableComparable key, ObjectWritable value, Context context) throws IOException, InterruptedException {
         
         writer.write(key, value);
     }
@@ -89,10 +92,13 @@ public class ShellMapper<KI, VI, KO, VO> extends Mapper<KI, VI, KO, VO> {
         
         context.setStatus("Running command");
 
-        // Preparing output file
-        File outputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "output", ".tmp");
-        config.getJobOutput().setLocalPath(outputFile.getAbsolutePath());
-        Hadoopizer.logger.info("Saving temporary results in: " + outputFile);
+        // Preparing output files
+        HashSet<JobOutput> outs = config.getJobOutputs();
+        for (JobOutput out : outs) {
+            File outputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "output_" + out.getId(), ".tmp");
+            out.setLocalPath(outputFile.getAbsolutePath());
+            Hadoopizer.logger.info("Saving temporary results in: " + outputFile);
+        }
 
         // Preparing the command line
         String command = config.getFinalCommand();
@@ -136,27 +142,29 @@ public class ShellMapper<KI, VI, KO, VO> extends Mapper<KI, VI, KO, VO> {
             throw new RuntimeException("Execution of command failed (returned " + result + ")");
         }
 
-        // Process finished, get the output file content and add it to context
-        context.setStatus("Parsing command output with " + config.getJobOutput().getReducerId() + " parser");
+        // Process finished, get the output files content and add it to context
+        for (JobOutput out : outs) {
+            context.setStatus("Parsing command output with " + out.getReducerId() + " parser for " + out.getId() + " output");
         
-        HadoopizerInputFormat<?, ?> inf = config.getJobOutput().getFileInputFormat();
-        
-        // We want to add the header in the final output file
-        Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.output.header.file"));
-        inf.setHeaderTempFile(headerFile);
-        
-        InputSplit split = new FileSplit(new Path(outputFile.toURI()), 0, outputFile.length(), null);
-        @SuppressWarnings("unchecked")
-        RecordReader<KO, VO> reader = (RecordReader<KO, VO>) inf.createRecordReader(split, context);
-        reader.initialize(split, context);
-        while (reader.nextKeyValue()) {
-            context.write(reader.getCurrentKey(), reader.getCurrentValue());
+            HadoopizerInputFormat inf = out.getFileInputFormat();
+            
+            // We want to add the header in the final output file
+            Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.output.header.file") + "_" + out.getId());
+            inf.setHeaderTempFile(headerFile);
+            
+            File outFile = new File(out.getLocalPath());
+            InputSplit split = new FileSplit(new Path(outFile.toURI()), 0, outFile.length(), null);
+            HadoopizerRecordReader reader = (HadoopizerRecordReader) inf.createRecordReader(split, context);
+            reader.initialize(split, context);
+            while (reader.nextKeyValue()) {
+                context.write(reader.getCurrentKey(out.getId()), new ObjectWritable(reader.getCurrentValue()));
+            }
+            reader.close();
+    
+            // Remove temporary output files
+            if (!outFile.delete())
+    			Hadoopizer.logger.warning("Cannot delete output file: " + outFile.getAbsolutePath());
         }
-        reader.close();
-
-        // Remove temporary output files
-        if (!outputFile.delete())
-			Hadoopizer.logger.warning("Cannot delete output file: " + outputFile.getAbsolutePath());
         
         context.setStatus("Finished");
     }

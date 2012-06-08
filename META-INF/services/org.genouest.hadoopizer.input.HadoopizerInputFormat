@@ -1,3 +1,4 @@
 org.genouest.hadoopizer.input.FastqInputFormat
 org.genouest.hadoopizer.input.FastaInputFormat
 org.genouest.hadoopizer.input.SAMInputFormat
+org.genouest.hadoopizer.input.FakeInputFormat

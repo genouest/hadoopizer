@@ -2,9 +2,11 @@ package org.genouest.hadoopizer.input;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
-public abstract class HadoopizerInputFormat<K, V> extends FileInputFormat<K, V> {
+public abstract class HadoopizerInputFormat extends FileInputFormat<ObjectWritableComparable, ObjectWritable> {
 
     private Path headerTempFile;
     
@@ -18,14 +20,14 @@ public abstract class HadoopizerInputFormat<K, V> extends FileInputFormat<K, V> 
     /**
      * Get a file where input file header can be saved
      * 
-     * @param conf The job configuration
+     * @param conf The conf configuration
      * @return A Path object for the temporary header file
      */
     public Path getHeaderTempFile(Configuration conf) {
         
         if (headerTempFile == null) {
             // No special temp file defined to save header content, use the default one
-            String headerFileName = conf.get("hadoopizer.temp.input.header.file");
+            String headerFileName = conf.get("hadoopizer.temp.input.header.file"); // FIXME add input id
             if (headerFileName != null &&  !headerFileName.isEmpty())
                 headerTempFile = new Path(headerFileName);
         }

@@ -1,19 +1,19 @@
 package org.genouest.hadoopizer.output;
 
 import java.io.IOException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
-public abstract class HadoopizerOutputFormat<K, V> extends FileOutputFormat<K, V> { 
+public abstract class HadoopizerOutputFormat extends FileOutputFormat<ObjectWritableComparable, ObjectWritable> { 
 
     private Path headerTempFile;
     
@@ -34,14 +34,14 @@ public abstract class HadoopizerOutputFormat<K, V> extends FileOutputFormat<K, V
     /**
      * Get a file where output file header can be saved
      * 
-     * @param conf The job configuration
+     * @param conf The conf configuration
      * @return A Path object for the temporary header file
      */
     public Path getHeaderTempFile(Configuration conf) {
         
         if (headerTempFile == null) {
             // No special temp file defined to save header content, use the default one
-            String headerFileName = conf.get("hadoopizer.temp.output.header.file");
+            String headerFileName = conf.get("hadoopizer.temp.output.header.file"); // FIXME add output id
             if (headerFileName != null &&  !headerFileName.isEmpty())
                 headerTempFile = new Path(headerFileName);
         }
@@ -59,7 +59,7 @@ public abstract class HadoopizerOutputFormat<K, V> extends FileOutputFormat<K, V
     }
     
     @Override
-    public RecordWriter<K, V> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
+    public RecordWriter<ObjectWritableComparable, ObjectWritable> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
         
         Configuration conf = context.getConfiguration();
         
@@ -73,7 +73,7 @@ public abstract class HadoopizerOutputFormat<K, V> extends FileOutputFormat<K, V
             extension += codec.getDefaultExtension();
         }
 
-        Path path = getDefaultWorkFile(context, extension);
+        Path path = getDefaultWorkFile(context, extension); // FIXME add id to filename to avoid overwriting when using multiple output
         
         return getRecordWriter(context, path, codec);
     }
@@ -88,33 +88,5 @@ public abstract class HadoopizerOutputFormat<K, V> extends FileOutputFormat<K, V
      * @throws IOException
      * @throws InterruptedException
      */
-    public abstract RecordWriter<K, V> getRecordWriter(TaskAttemptContext context, Path path, CompressionCodec codec) throws IOException, InterruptedException;
-    
-    /**
-     * Get the class of the output keys
-     * 
-     * @return class of the output keys
-     */
-    public Class<?> getOutputKeyClass() {
-        
-        Type[] params = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments();
-        if (params.length != 2)
-            return null;
-
-        return (Class<? >)params[0];
-    }
-
-    /**
-     * Get the class of the output values
-     * 
-     * @return class of the output values
-     */
-    public Class<?> getOutputValueClass() {
-
-        Type[] params = ((ParameterizedType) getClass().getGenericSuperclass()).getActualTypeArguments();
-        if (params.length != 2)
-            return null;
-
-        return (Class<? >) params[1];
-    }
+    public abstract RecordWriter<ObjectWritableComparable, ObjectWritable> getRecordWriter(TaskAttemptContext context, Path path, CompressionCodec codec) throws IOException, InterruptedException;
 }

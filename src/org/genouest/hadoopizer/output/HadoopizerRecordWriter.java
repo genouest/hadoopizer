@@ -7,9 +7,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.mapreduce.RecordWriter;
+import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
-public abstract class HadoopizerRecordWriter<K, V> extends RecordWriter<K, V> {
+public abstract class HadoopizerRecordWriter extends RecordWriter<ObjectWritableComparable, ObjectWritable> {
 
     /**
      * Write header to output file
