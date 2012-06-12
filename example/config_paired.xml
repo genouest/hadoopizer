@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<job>
+    <command>
+        blastp -query ${q} -db ${db} -out ${res}
+    </command>
+    
+    <input id="pair1">
+        <splitter>fastq_paired1</splitter>
+        <url>/local/foo/bar/myfile1.fastq</url>
+    </input>
+    
+    <input id="pair2">
+        <splitter>fastq_paired2</splitter>
+        <url>/local/foo/bar/myfile2.fastq</url>
+    </input>
+
+    <input id="db">
+        <splitter>none</splitter>
+        
+        <url autocomplete="true">/local/foo/bar/myfile</url>
+    </input>
+    
+    <output id="res"> <!-- multiple output is possible -->
+        <reducer format="sequence">blast</reducer><!-- each blast output line is transfered as a key/value + the output file is in SequenceFile format -->
+        <!--reducer>blast</reducer--><!-- each blast output line is transfered as a key/value + the output file is in blast format -->
+        <!--reducer>text</reducer--><!-- all the output files are merged in no specific order in a text file, keys/values given to reducer contain hdfs path -->
+        <!--reducer format="sequence">text</reducer--><!-- all the output files are stored in a SequenceFile, keys/values given to reducer contain hdfs path -->
+        
+        <compressor>gzip</compressor>
+        <!--compressor>bzip2</compressor-->
+        <!--compressor>none</compressor-->
+        
+        <url>/local/foo/bar</url> <!-- how is it handled? -->
+        <!--url>hdfs://pouet/</url--> <!-- how is it handled? -->
+        <!--url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/</url--> <!-- how is it handled? -->
+        <!-- any other protocol? -->
+    </output>
+    
+    <hadoop>
+        <config key="mapred.child.java.opts">-Xmx1024m</config>
+    </hadoop>
+</job>
