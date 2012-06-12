@@ -157,7 +157,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
             HadoopizerRecordReader reader = (HadoopizerRecordReader) inf.createRecordReader(split, context);
             reader.initialize(split, context);
             while (reader.nextKeyValue()) {
-                context.write(reader.getCurrentKey(out.getId()), new ObjectWritable(reader.getCurrentValue()));
+                context.write(reader.getCurrentKey(out.getId()), reader.getCurrentValue());
             }
             reader.close();
     
