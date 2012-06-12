@@ -29,7 +29,7 @@ import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
-import org.genouest.hadoopizer.mappers.ShellMapper;
+import org.genouest.hadoopizer.mapper.ShellMapper;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 import org.genouest.hadoopizer.reducer.ShellReducer;
 
@@ -328,6 +328,7 @@ public class Hadoopizer {
         
         // First define some default settings
         Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir")); // Defined from command line
+        // TODO use key-values with namespaces to store headers?
         jobConf.set("hadoopizer.temp.input.header.file", cacheDir.toString() + Path.SEPARATOR + "temp_input_header_file.txt"); // FIXME add output id
         jobConf.set("hadoopizer.temp.output.header.file", cacheDir.toString() + Path.SEPARATOR  + "temp_output_header_file.txt"); // FIXME add output id
         jobConf.set("hadoopizer.binaries.link.name", "binaries");

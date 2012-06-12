@@ -1,4 +1,4 @@
-package org.genouest.hadoopizer.mappers; // TODO rename package
+package org.genouest.hadoopizer.mapper;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
