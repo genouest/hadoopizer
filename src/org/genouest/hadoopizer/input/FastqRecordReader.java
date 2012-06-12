@@ -15,7 +15,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.LineReader;
-import org.apache.hadoop.util.ReflectionUtils;
 import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
@@ -183,7 +182,7 @@ public class FastqRecordReader extends HadoopizerRecordReader {
     @Override
     public ObjectWritableComparable getCurrentKey() throws IOException, InterruptedException {
 
-        ObjectWritableComparable key = ReflectionUtils.newInstance(ObjectWritableComparable.class, conf);
+        ObjectWritableComparable key = new ObjectWritableComparable();
         key.set("", recordKey);
         return key;
     }
@@ -192,7 +191,7 @@ public class FastqRecordReader extends HadoopizerRecordReader {
     public ObjectWritableComparable getCurrentKey(String id) throws IOException, InterruptedException {
 
         
-        ObjectWritableComparable key = ReflectionUtils.newInstance(ObjectWritableComparable.class, conf);
+        ObjectWritableComparable key = new ObjectWritableComparable();
         key.set(id, recordKey);
         return key;
     }
