@@ -4,20 +4,16 @@
         bowtie -m 1  --chunkmbs 128 --best --strata -S ${genome} ${reads} > ${mapped}
     </command>
     
-    <input id="reads">
-        <splitter>fastq</splitter>
+    <input id="reads" splitter="fastq">
         <url>/omaha-beach/hadoopizer/K9_sequence.fastq</url>
     </input>
 
     <input id="genome">
-        <splitter>none</splitter>
-    
         <url autocomplete="true">/omaha-beach/hadoopizer/aphid_genome/assembly2_scaffolds_DG</url>
     </input>
     
-    <output id="mapped">
-        <reducer>sam</reducer>
-        
+    <outputs>
         <url>/omaha-beach/hadoopizer/output</url>
+        <output id="mapped" reducer="sam" />
     </output>
 </job>
