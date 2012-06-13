@@ -215,14 +215,25 @@ public class JobConfig {
             e.printStackTrace();
             System.exit(1);
         }
+        
+        if (inputs.getLength() < 1) {
+            System.err.println("The config file should contain at least one 'input' element");
+            System.exit(1);
+        }
 
         for(int i = 0; i < inputs.getLength(); i++) {
             Element input = (Element) inputs.item(i);
-
+            
+            if (!input.hasAttribute("id")) {
+                System.err.println("Each 'input' element should have an 'id' attribute");
+                System.exit(1);
+            }
+            
             JobInput jobInput = new JobInput(input.getAttribute("id"));
-            boolean isSplittable = !input.getElementsByTagName("splitter").item(0).getTextContent().equalsIgnoreCase("none");
+            
+            boolean isSplittable = input.hasAttribute("splitter") && input.getAttribute("splitter") != "none";
             if (isSplittable) {
-                jobInput.setSplitterId(input.getElementsByTagName("splitter").item(0).getTextContent());
+                jobInput.setSplitterId(input.getAttribute("splitter"));
             }
 
             String url = input.getElementsByTagName("url").item(0).getTextContent();
@@ -376,14 +387,9 @@ public class JobConfig {
             rootElement.appendChild(inputElement);
             inputElement.setAttribute("id", input.getId());
 
-            Element splitter = doc.createElement("splitter");
             if (input.hasSplitter()) {
-                splitter.appendChild(doc.createTextNode(input.getSplitterId()));
+                inputElement.setAttribute("splitter", input.getSplitterId());
             }
-            else {
-                splitter.appendChild(doc.createTextNode("none"));
-            }
-            inputElement.appendChild(splitter);
 
             Element urlElement = doc.createElement("url");
             inputElement.appendChild(urlElement);
