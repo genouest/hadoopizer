@@ -236,7 +236,7 @@ public class JobConfig {
                 jobInput.setSplitterId(input.getAttribute("splitter"));
             }
 
-            String url = input.getElementsByTagName("url").item(0).getTextContent();
+            String url = input.getElementsByTagName("url").item(0).getTextContent(); // TODO allow multiple url element if multiple inputpath, and allow simply the url if only one
             if (url.startsWith("/"))
                 url = "file:" + url;
             try {
@@ -405,9 +405,7 @@ public class JobConfig {
         inputElement.setAttribute("id", splittableInput.getId());
 
         if (splittableInput.hasSplitter()) {
-            Element splitter = doc.createElement("splitter");
-            splitter.appendChild(doc.createTextNode(splittableInput.getSplitterId()));
-            inputElement.appendChild(splitter);
+            inputElement.setAttribute("splitter", splittableInput.getSplitterId());
         }
 
         Element urlElement = doc.createElement("url");
