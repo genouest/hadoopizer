@@ -73,7 +73,7 @@ public abstract class HadoopizerOutputFormat extends FileOutputFormat<ObjectWrit
             extension += codec.getDefaultExtension();
         }
 
-        Path path = getDefaultWorkFile(context, extension); // FIXME add id to filename to avoid overwriting when using multiple output
+        Path path = getDefaultWorkFile(context, extension);
         
         return getRecordWriter(context, path, codec);
     }

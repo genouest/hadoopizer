@@ -12,6 +12,7 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -33,8 +34,12 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.hadoop.io.compress.BZip2Codec;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.GzipCodec;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -43,14 +48,43 @@ public class JobConfig {
     private String command;
     private JobInput splittableInput; // TODO support paired end (or test+control for findpeaks)
     private HashSet<JobInput> staticInputs;
-    private HashSet<JobOutput> jobOutputs; // TODO allow merging of multiple outputs
+    private HashSet<JobOutput> jobOutputs;
     private HashMap<String, String> hadoopConfig;
+    private String outputCompressor;
+    private URI outputUrl;
+    
+    /**
+     * List of allowed compression codecs
+     */
+    private static final HashMap<String, Class<? extends CompressionCodec>> allowedCodecs = new HashMap<String, Class<? extends CompressionCodec>>();
+    static {
+        allowedCodecs.put("gzip", GzipCodec.class);
+        allowedCodecs.put("bzip2", BZip2Codec.class);
+    }
 
     public JobConfig() {
 
         staticInputs = new HashSet<JobInput>();
         jobOutputs = new HashSet<JobOutput>();
         hadoopConfig = new HashMap<String, String>();
+    }
+
+    /**
+     * Get the url where the output data will be saved, as declared in the config
+     * 
+     * @return the outputUrl
+     */
+    public URI getOutputUrl() {
+        return outputUrl;
+    }
+
+    /**
+     * Set the url where the output data will be saved, as declared in the config
+     * 
+     * @param url the outputUrl to set
+     */
+    public void setOutputUrl(URI outputUrl) {
+        this.outputUrl = outputUrl;
     }
 
     /**
@@ -215,60 +249,87 @@ public class JobConfig {
             }
         }
 
-        // Get the output
+        // Get the outputs
         NodeList outputs = null;
+        Element outputsElem = null;
         try {
-            XPathExpression expr = xpath.compile("/job/output");
+            XPathExpression expr = xpath.compile("/job/outputs");
             outputs = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+            outputsElem = (Element) outputs.item(0);
         } catch (XPathExpressionException e) {
             e.printStackTrace();
             System.exit(1);
         }
+        
+        if (outputs.getLength() != 1) {
+            System.err.println("The config file should contain exactly one 'outputs' element");
+            System.exit(1);
+        }
+        
+        // Output compressor
+        Element compressor = (Element) outputsElem.getElementsByTagName("compressor").item(0);
+        if (compressor != null) {
+            String codec = compressor.getTextContent();
+            if (isOutputCompressorSupported(codec)) {
+                Hadoopizer.logger.info("Compressing the output with " + codec);
+                setOutputCompressor(compressor.getTextContent());
+            }
+            else {
+                System.err.println("Unsupported output compressor '" + codec + "' (allowed: " + getSupportedOutputCompressor() + ")");
+                System.exit(1);
+            }
+        }
+        
+        // Output url
+        Node urlNode = outputsElem.getElementsByTagName("url").item(0);
+        String url = "";
+        if (urlNode != null) {
+            url = urlNode.getTextContent();
+            if (url.startsWith("/"))
+                url = "file:" + url;
+        }
+        else {
+            System.err.println("The config file should contain an 'url' element in 'outputs' element");
+            System.exit(1);
+        }
+        
+        // Output url
+        try {
+            setOutputUrl(new URI(url));
+        } catch (URISyntaxException e) {
+            System.err.println("Wrong URI format in config file: "+url);
+            e.printStackTrace();
+            System.exit(1);
+        }
+        
+        // Get the outputs
+        NodeList outs = outputsElem.getElementsByTagName("output");
 
-        if (outputs.getLength() < 1) {
-            System.err.println("The config file should contain at least one output element");
+        if (outs.getLength() < 1) {
+            System.err.println("The config file should contain at least one 'output' element in 'outputs' element");
             System.exit(1);
         }
 
-        for(int i = 0; i < outputs.getLength(); i++) {
-            Element output = (Element) outputs.item(i);
+        for(int i = 0; i < outs.getLength(); i++) {
+            Element output = (Element) outs.item(i);
+            
+            if (!output.hasAttribute("id") || !output.hasAttribute("reducer")) {
+                System.err.println("Each 'output' element should have an 'id' and a 'reducer' attribute");
+                System.exit(1);
+            }
 
             JobOutput jobOutput = new JobOutput(output.getAttribute("id"));
-            Element reducer = (Element) output.getElementsByTagName("reducer").item(0);
-            jobOutput.setReducerId(reducer.getTextContent());
-            if (reducer.hasAttribute("format") && reducer.getAttribute("format").equalsIgnoreCase("sequence")) {
+
+            // Reducer
+            jobOutput.setReducerId(output.getAttribute("reducer"));
+            if (output.hasAttribute("format") && output.getAttribute("format").equalsIgnoreCase("sequence")) {
                 // The output needs to be stored as hadoop SequenceFile for reuse in a future hadoop conf
                 jobOutput.setSequenceOutput(true);
-            }
-            // Output compressor
-            Element compressor = (Element) output.getElementsByTagName("compressor").item(0);
-            if (compressor != null) {
-                String codec = compressor.getTextContent();
-                if (JobOutput.isCompressorSupported(codec)) {
-                    Hadoopizer.logger.info("Compressing the output with " + codec);
-                    jobOutput.setCompressor(codec);
-                }
-                else {
-                    System.err.println("Unsupported output compressor '" + codec + "' (allowed: " + JobOutput.getSupportedCompressor() + ")");
-                    System.exit(1);
-                }
-            }
-    
-            String url = output.getElementsByTagName("url").item(0).getTextContent();
-            if (url.startsWith("/"))
-                url = "file:" + url;
-    
-            try {
-                jobOutput.setUrl(new URI(url));
-            } catch (URISyntaxException e) {
-                System.err.println("Wrong URI format in config file: "+output.getElementsByTagName("url").item(0).getTextContent());
-                e.printStackTrace();
-                System.exit(1);
             }
             
             jobOutputs.add(jobOutput);
             
-            Hadoopizer.logger.info("Using reducer '"+jobOutput.getReducerId()+"' for output '"+jobOutput.getId()+"' ("+jobOutput.getUrl()+")");
+            Hadoopizer.logger.info("Using reducer '"+jobOutput.getReducerId()+"' for output '"+jobOutput.getId()+"' ("+getOutputUrl()+")");
         }
         
         // Load hadoop specific configuration
@@ -351,28 +412,27 @@ public class JobConfig {
         }
 
         // Output
+        Element outputsElement = doc.createElement("outputs");
+        rootElement.appendChild(outputsElement);
         for (JobOutput jobOutput : jobOutputs) {
             Element outputElement = doc.createElement("output");
-            rootElement.appendChild(outputElement);
+            outputsElement.appendChild(outputElement);
             outputElement.setAttribute("id", jobOutput.getId());
-    
-            Element splitter = doc.createElement("reducer");
-            splitter.appendChild(doc.createTextNode(jobOutput.getReducerId()));
+            outputElement.setAttribute("reducer", jobOutput.getReducerId());
             if (jobOutput.isSequenceOutput()) {
-                splitter.setAttribute("format", "sequence");
+                outputElement.setAttribute("format", "sequence");
             }
-            outputElement.appendChild(splitter);
-    
-            if (jobOutput.hasCompressor()) {
-                Element compressor = doc.createElement("compressor");
-                compressor.appendChild(doc.createTextNode(jobOutput.getCompressorName()));
-                outputElement.appendChild(compressor);
-            }
-    
-            Element outUrlElement = doc.createElement("url");
-            outputElement.appendChild(outUrlElement);
-            outUrlElement.appendChild(doc.createTextNode(jobOutput.getUrl().toString()));
         }
+
+        if (hasOutputCompressor()) {
+            Element compressor = doc.createElement("compressor");
+            compressor.appendChild(doc.createTextNode(getOutputCompressorName()));
+            outputsElement.appendChild(compressor);
+        }
+
+        Element outUrlElement = doc.createElement("url");
+        outputsElement.appendChild(outUrlElement);
+        outUrlElement.appendChild(doc.createTextNode(getOutputUrl().toString()));
         
         // Hadoop config
         if (hadoopConfig.size() > 0) {
@@ -520,5 +580,68 @@ public class JobConfig {
      */
     public void setHadoopConfig(HashMap<String, String> hadoopConfig) {
         this.hadoopConfig = hadoopConfig;
+    }
+
+    /**
+     * Get the name of the output compressor to use
+     * 
+     * @return The name of the output compressor to use
+     */
+    public String getOutputCompressorName() {
+        return outputCompressor;
+    }
+    
+    /**
+     * Get the output compressor class
+     * 
+     * @return the output compressor class
+     */
+    public Class<? extends CompressionCodec> getOutputCompressor() {
+        if (allowedCodecs.containsKey(outputCompressor))
+            return allowedCodecs.get(outputCompressor);
+        
+        return null;
+    }
+
+    /**
+     * Set the name of the output compressor to use
+     * 
+     * @param compressor the output compressor to set
+     */
+    public void setOutputCompressor(String outputCompressor) {
+        this.outputCompressor = outputCompressor;
+    }
+
+    /**
+     * Is there an output compressor for this output
+     * 
+     * @return true if an output compressor is set
+     */
+    public boolean hasOutputCompressor() {
+        return allowedCodecs.containsKey(outputCompressor);
+    }
+    
+    /**
+     * Is the given output compressor name is supported
+     * 
+     * @return true if given output compressor name is supported
+     */
+    public static boolean isOutputCompressorSupported(String outputCompressor) {
+        return allowedCodecs.containsKey(outputCompressor);
+    }
+
+    /**
+     * Get a list of supported output compressors
+     * 
+     * @return a comma separated list of supported output compressors
+     */
+    public static String getSupportedOutputCompressor() {
+        String sup = "";
+        
+        for (Entry<String, Class<? extends CompressionCodec>> e : allowedCodecs.entrySet()) {
+            sup += e.getKey() + " ";
+        }
+        
+        return sup;
     }
 }

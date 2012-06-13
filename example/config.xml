@@ -4,7 +4,7 @@
         blastp -query ${q} -db ${db} -out ${res}
     </command>
     
-    <input id="q"><!-- only one allowed -->
+    <input id="q"><!-- only one allowed with splitter -->
         <splitter>fasta</splitter>
         
         <!-- s3n, local, ... = only one url per input -->
@@ -26,21 +26,19 @@
         <!-- any other protocol? -->
     </input>
     
-    <output id="res">
-        <reducer format="sequence">blast</reducer><!-- each blast output line is transfered as a key/value + the output file is in SequenceFile format -->
-        <!--reducer>blast</reducer--><!-- each blast output line is transfered as a key/value + the output file is in blast format -->
-        <!--reducer>text</reducer--><!-- all the output files are merged in no specific order in a text file, keys/values given to reducer contain hdfs path -->
-        <!--reducer format="sequence">text</reducer--><!-- all the output files are stored in a SequenceFile, keys/values given to reducer contain hdfs path -->
-        
-        <compressor>gzip</compressor>
-        <!--compressor>bzip2</compressor-->
-        <!--compressor>none</compressor-->
-        
-        <url>/local/foo/bar</url> <!-- how is it handled? -->
-        <!--url>hdfs://pouet/</url--> <!-- how is it handled? -->
-        <!--url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/</url--> <!-- how is it handled? -->
-        <!-- any other protocol? -->
-    </output>
+    <outputs>
+      <compressor>gzip</compressor>
+      <!--compressor>bzip2</compressor-->
+      <!--compressor>none</compressor-->
+      
+      <url>/local/foo/bar</url> <!-- how is it handled? -->
+      <!--url>hdfs://pouet/</url--> <!-- how is it handled? -->
+      <!--url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/</url--> <!-- how is it handled? -->
+      <!-- any other protocol? -->
+      
+      <output id="res" reducer="blast" format="sequence" />
+      <output id="res2" reducer="fasta" />
+    </outputs>
     
     <hadoop>
         <config key="mapred.child.java.opts">-Xmx1024m</config>

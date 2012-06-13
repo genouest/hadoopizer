@@ -225,7 +225,7 @@ public class Hadoopizer {
             System.exit(1);
         }
 
-        Path outputDir = new Path(((JobOutput) config.getJobOutputs().toArray()[0]).getUrl()); // FIXME use common output dir
+        Path outputDir = new Path(config.getOutputUrl());
         try {
             FileSystem outputFs = outputDir.getFileSystem(jobConf);
             if (outputFs.exists(outputDir)) {
@@ -278,9 +278,7 @@ public class Hadoopizer {
         
 
         HashSet<JobOutput> outputs = config.getJobOutputs();
-        JobOutput cached = null; // FIXME remove this ugly stuff: all outputs should be placed in the same dir, update xml schema 
         for (JobOutput jobOutput : outputs) {
-            cached = jobOutput;
             HadoopizerOutputFormat oFormat = jobOutput.getFileOutputFormat();
             job.setOutputFormatClass(oFormat.getClass());
             MultipleOutputs.addNamedOutput(job, jobOutput.getId(), oFormat.getClass(), ObjectWritableComparable.class, ObjectWritable.class); // FIXME token must not contain _
@@ -291,10 +289,9 @@ public class Hadoopizer {
         job.setOutputValueClass(ObjectWritable.class);
         
         // Output compression if asked
-        // FIXME does it work for multiple?
-        FileOutputFormat.setCompressOutput(job, cached.hasCompressor());
-        if (cached.hasCompressor())
-            FileOutputFormat.setOutputCompressorClass(job, cached.getCompressor());
+        FileOutputFormat.setCompressOutput(job, config.hasOutputCompressor());
+        if (config.hasOutputCompressor())
+            FileOutputFormat.setOutputCompressorClass(job, config.getOutputCompressor());
         
         // Set input path
         FileInputFormat.setInputPaths(job, inputPath);
@@ -306,8 +303,7 @@ public class Hadoopizer {
         job.setReducerClass(ShellReducer.class); // TODO create a specific one if some outputs types can be reduced before writing
         
         // Set output path
-        // FIXME does it work for multiple?
-        FileOutputFormat.setOutputPath(job, new Path(cached.getUrl()));
+        FileOutputFormat.setOutputPath(job, new Path(config.getOutputUrl()));
         
         return job;
     }
