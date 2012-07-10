@@ -247,7 +247,7 @@ public class Hadoopizer {
      */
     private Job prepareJob() throws IOException {
 
-        Path inputPath = new Path(config.getSplittableInput().getUrl());
+        Path inputPath = new Path(config.getSplitableInput().getUrl());
         
         // Add static input files to distributed cache
         HashSet<JobInput> inputs = config.getStaticInputs();
@@ -273,7 +273,7 @@ public class Hadoopizer {
         job.setJarByClass(Hadoopizer.class);
         
         // Define input and output data format
-        HadoopizerInputFormat iFormat = config.getSplittableInput().getFileInputFormat();
+        HadoopizerInputFormat iFormat = config.getSplitableInput().getFileInputFormat();
         job.setInputFormatClass(iFormat.getClass());
         
 

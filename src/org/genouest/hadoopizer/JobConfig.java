@@ -46,7 +46,7 @@ import org.xml.sax.SAXException;
 public class JobConfig {
 
     private String command;
-    private JobInput splittableInput; // TODO support paired end (or test+control for findpeaks)
+    private JobInput splitableInput; // TODO support paired end (or test+control for findpeaks)
     private HashSet<JobInput> staticInputs;
     private HashSet<JobOutput> jobOutputs;
     private HashMap<String, String> hadoopConfig;
@@ -231,8 +231,8 @@ public class JobConfig {
             
             JobInput jobInput = new JobInput(input.getAttribute("id"));
             
-            boolean isSplittable = input.hasAttribute("splitter") && input.getAttribute("splitter") != "none";
-            if (isSplittable) {
+            boolean isSplitable = input.hasAttribute("splitter") && input.getAttribute("splitter") != "none";
+            if (isSplitable) {
                 jobInput.setSplitterId(input.getAttribute("splitter"));
             }
 
@@ -248,11 +248,11 @@ public class JobConfig {
             }
 
             Element urlEl = (Element) input.getElementsByTagName("url").item(0);
-            jobInput.setAutoComplete(!isSplittable && urlEl.hasAttribute("autocomplete") && urlEl.getAttribute("autocomplete").equalsIgnoreCase("true"));
+            jobInput.setAutoComplete(!isSplitable && urlEl.hasAttribute("autocomplete") && urlEl.getAttribute("autocomplete").equalsIgnoreCase("true"));
 
             if (jobInput.hasSplitter()) {
                 Hadoopizer.logger.info("Using splitter '"+jobInput.getSplitterId()+"' for input '"+jobInput.getId()+"' ("+jobInput.getUrl()+")");
-                splittableInput = jobInput;
+                splitableInput = jobInput; // TODO support multiple
             }
             else {
                 Hadoopizer.logger.info("No splitting for input '"+jobInput.getId()+"' ("+jobInput.getUrl()+")");			
@@ -399,19 +399,19 @@ public class JobConfig {
             }
         }
 
-        // Splittable input
+        // Splitable input
         Element inputElement = doc.createElement("input");
         rootElement.appendChild(inputElement);
-        inputElement.setAttribute("id", splittableInput.getId());
+        inputElement.setAttribute("id", splitableInput.getId());
 
-        if (splittableInput.hasSplitter()) {
-            inputElement.setAttribute("splitter", splittableInput.getSplitterId());
+        if (splitableInput.hasSplitter()) {
+            inputElement.setAttribute("splitter", splitableInput.getSplitterId());
         }
 
         Element urlElement = doc.createElement("url");
         inputElement.appendChild(urlElement);
-        urlElement.appendChild(doc.createTextNode(splittableInput.getUrl().toString()));
-        if (splittableInput.isAutoComplete()) {
+        urlElement.appendChild(doc.createTextNode(splitableInput.getUrl().toString()));
+        if (splitableInput.isAutoComplete()) {
             urlElement.setAttribute("autocomplete", "true");
         }
 
@@ -495,10 +495,10 @@ public class JobConfig {
 
         String finalCommand = command;
 
-        if (splittableInput.getLocalPath().isEmpty())
-            throw new RuntimeException("Unable to generate command line: the splittable input local path is empty.");
+        if (splitableInput.getLocalPath().isEmpty())
+            throw new RuntimeException("Unable to generate command line: the splitable input local path is empty.");
 
-        finalCommand = finalCommand.replaceAll("\\$\\{" + splittableInput.getId() + "\\}", splittableInput.getLocalPath());
+        finalCommand = finalCommand.replaceAll("\\$\\{" + splitableInput.getId() + "\\}", splitableInput.getLocalPath());
 
         for (JobInput in : staticInputs) {
             if (in.getLocalPath().isEmpty())
@@ -540,8 +540,8 @@ public class JobConfig {
      * 
      * @return a JobInput object
      */
-    public JobInput getSplittableInput() {
-        return splittableInput;
+    public JobInput getSplitableInput() {
+        return splitableInput;
     }
 
     /**

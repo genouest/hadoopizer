@@ -64,7 +64,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
         // Write data chunk to a temporary input file
         // This input file will be used in the command line launched in the cleanup step
         
-        HadoopizerOutputFormat outf = config.getSplittableInput().getFileOutputFormat();
+        HadoopizerOutputFormat outf = config.getSplitableInput().getFileOutputFormat();
         inputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "input", "."+outf.getExtension());
         
         // We want to add the header from input file to each chunk file
@@ -75,7 +75,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
         
         Hadoopizer.logger.info("Writing input chunk to '" + inputFile.getAbsolutePath() + "' with OutputFormat class '" + writer.getClass().getCanonicalName() + "'");
 
-        config.getSplittableInput().setLocalPath(inputFile.getAbsolutePath());
+        config.getSplitableInput().setLocalPath(inputFile.getAbsolutePath());
     }
 
 

@@ -169,7 +169,7 @@ public class JobInput {
     }
 
     /**
-     * Get a FileInputFormat instance able to split the splittable input
+     * Get a FileInputFormat instance able to split the splitable input
      * 
      * @return a FileInputFormat corresponding to the splitter id defined for this JobInput
      */
@@ -183,7 +183,7 @@ public class JobInput {
     }
 
     /**
-     * Get a FileOutputFormat instance able to write the splittable input into a temporary file
+     * Get a FileOutputFormat instance able to write the splitable input into a temporary file
      * 
      * @return a FileOutputFormat corresponding to the splitter id defined for this JobInput
      */
