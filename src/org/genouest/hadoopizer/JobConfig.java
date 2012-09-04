@@ -229,19 +229,25 @@ public class JobConfig {
                 System.exit(1);
             }
             
-            JobInput jobInput = new JobInput(input.getAttribute("id"));
-            jobInput.loadXml(input);
-
-            if (jobInput.hasSplitter()) {
-                Hadoopizer.logger.info("Using splitter '"+jobInput.getSplitterId()+"' for input '"+jobInput.getId()+"' ("+jobInput.getUrl()+")");
+            boolean isSplitable = input.hasAttribute("split") && input.getAttribute("split") != "true";
+            if (isSplitable) {
+                JobInput jobInput = new SplitableJobInput(input.getAttribute("id"));
+                jobInput.loadXml(input);
                 splitableInput = jobInput;
             }
             else {
-                Hadoopizer.logger.info("No splitting for input '"+jobInput.getId()+"' ("+jobInput.getUrl()+")");            
+                JobInput jobInput = new StaticJobInput(input.getAttribute("id"));
+                jobInput.loadXml(input);
                 staticInputs.add(jobInput);
             }
         }
 
+        // Check that there are some inputs
+        if (splitableInput == null) {
+            System.err.println("The config file should contain exactly one 'input' element with a splitter");
+            System.exit(1);
+        }
+        
         // Get the outputs
         NodeList outputs = null;
         Element outputsElem = null;
@@ -365,37 +371,13 @@ public class JobConfig {
 
         // Static inputs
         for (JobInput input : staticInputs) {
-            Element inputElement = doc.createElement("input");
+            Element inputElement = input.dumpXml(doc);
             rootElement.appendChild(inputElement);
-            inputElement.setAttribute("id", input.getId());
-
-            if (input.hasSplitter()) {
-                inputElement.setAttribute("splitter", input.getSplitterId());
-            }
-
-            Element urlElement = doc.createElement("url");
-            inputElement.appendChild(urlElement);
-            urlElement.appendChild(doc.createTextNode(input.getUrl().toString()));
-            if (input.isAutoComplete()) {
-                urlElement.setAttribute("autocomplete", "true");
-            }
         }
 
         // Splitable input
-        Element inputElement = doc.createElement("input");
+        Element inputElement = splitableInput.dumpXml(doc);
         rootElement.appendChild(inputElement);
-        inputElement.setAttribute("id", splitableInput.getId()); // FIXME null pointer if no splitable input (should throw an error)
-
-        if (splitableInput.hasSplitter()) {
-            inputElement.setAttribute("splitter", splitableInput.getSplitterId());
-        }
-
-        Element urlElement = doc.createElement("url");
-        inputElement.appendChild(urlElement);
-        urlElement.appendChild(doc.createTextNode(splitableInput.getUrl().toString()));
-        if (splitableInput.isAutoComplete()) {
-            urlElement.setAttribute("autocomplete", "true");
-        }
 
         // Output
         Element outputsElement = doc.createElement("outputs");
@@ -477,21 +459,10 @@ public class JobConfig {
 
         String finalCommand = command;
 
-        if (splitableInput.hasAdditionalUrls()) {
-            
-        }
-        else {
-            if (splitableInput.getLocalPath().isEmpty())
-                throw new RuntimeException("Unable to generate command line: the splitable input local path is empty.");
-    
-            finalCommand = finalCommand.replaceAll("\\$\\{" + splitableInput.getId() + "\\}", splitableInput.getLocalPath());
-        }
+        command = splitableInput.prepareCommand(command);
 
         for (JobInput in : staticInputs) {
-            if (in.getLocalPath().isEmpty())
-                throw new RuntimeException("Unable to generate command line: the '" + in.getId() + "' input local path is empty.");
-
-            finalCommand = finalCommand.replaceAll("\\$\\{" + in.getId() + "\\}", in.getLocalPath());
+            command = in.prepareCommand(command);
         }
 
         for (JobOutput jobOutput : jobOutputs) {

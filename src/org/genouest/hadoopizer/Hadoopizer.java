@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -259,10 +258,11 @@ public class Hadoopizer {
      * @throws IOException
      */
     private Job prepareJob() throws IOException {
-
-        boolean joinData = config.getSplitableInput().getAdditionalUrls().size() > 0;
         
-        Path inputPath = new Path(config.getSplitableInput().getUrl());
+        SplitableJobInput splitable = (SplitableJobInput) config.getSplitableInput();
+        boolean joinData = splitable.getFiles().size() > 1; // FIXME refactor
+        
+        Path inputPath = new Path(splitable.getFiles().get(0).getUrl()); // FIXME make it prettier
         if (joinData) {
             // TODO allow to use already joined data when reusing input data
             // There are multiple input data files, join them first in a specific map/reduce job
@@ -271,17 +271,16 @@ public class Hadoopizer {
             joinInputData(inputPath);
         }
         
-        // TODO adapt the mapper to receive data from a CompositeInputFormat loaded from a SequenceFile
-        
         // Add static input files to distributed cache
         HashSet<JobInput> inputs = config.getStaticInputs();
         for (JobInput jobInput : inputs) {
+            StaticJobInput input = (StaticJobInput) jobInput; 
             Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir"));
-            Path hdfsBasePath = new Path(cacheDir.toString() + Path.SEPARATOR + "static_data" + Path.SEPARATOR + jobInput.getId() + Path.SEPARATOR);
+            Path hdfsBasePath = new Path(cacheDir.toString() + Path.SEPARATOR + "static_data" + Path.SEPARATOR + input.getId() + Path.SEPARATOR);
 
             // We need to add to distributed cache static file(s)
-            for (URI url : jobInput.getAllUrls(jobConf)) {
-                addToDistributedCache(jobInput.getId(), url, hdfsBasePath);
+            for (URI url : input.getAllUrls(jobConf)) {
+                addToDistributedCache(input.getId(), url, hdfsBasePath);
             }
         }
         
@@ -301,7 +300,7 @@ public class Hadoopizer {
             job.setInputFormatClass(SequenceFileInputFormat.class); // FIXME created with old api, will it work?
         }
         else {
-            HadoopizerInputFormat iFormat = config.getSplitableInput().getFileInputFormat();
+            HadoopizerInputFormat iFormat = splitable.getFiles().get(0).getFileInputFormat(); // FIXME make prettier
             job.setInputFormatClass(iFormat.getClass());
         }
         
@@ -348,17 +347,14 @@ public class Hadoopizer {
      */
     private void joinInputData(Path tempOutput) throws IOException {
 
-        Path inputPath = new Path(config.getSplitableInput().getUrl());
+        SplitableJobInput splitable = (SplitableJobInput) config.getSplitableInput();
 
         logger.info("Joining input data from following input files:");
-        logger.info("" + inputPath);
         
-        ArrayList<URI> additionalUrls = config.getSplitableInput().getAdditionalUrls(); // FIXME what if more than 1?
         ArrayList<Path> allUrls = new ArrayList<Path>();
-        allUrls.add(inputPath);
-        for (URI url : additionalUrls) {
-            allUrls.add(new Path(url));
-            logger.info("" + url);
+        for (JobInputFile file : splitable.getFiles()) {
+            allUrls.add(new Path(file.getUrl()));
+            logger.info("" + file.getUrl());
         }
 
         logger.info("Joined data will be placed in temporary file: " + tempOutput);
@@ -377,8 +373,8 @@ public class Hadoopizer {
         jobConfO.setOutputValueClass(TupleWritable.class);
         
         // Set input path
-        Class<? extends InputFormat> inputFormatClass = (Class<? extends InputFormat>) FastqInputFormat.class;
-        jobConfO.set("mapred.join.expr", CompositeInputFormat.compose("inner", inputFormatClass, (Path[]) allUrls.toArray()));
+        Class<? extends InputFormat> inputFormatClass = (Class<? extends InputFormat>) FastqInputFormat.class; // FIXME cast problem!!
+        jobConfO.set("mapred.join.expr", CompositeInputFormat.compose("inner", inputFormatClass, (Path[]) allUrls.toArray(new Path[0])));
         
         // Set output path
         org.apache.hadoop.mapred.FileOutputFormat.setOutputPath(jobConfO, tempOutput);
@@ -405,7 +401,7 @@ public class Hadoopizer {
         // First define some default settings
         Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir")); // Defined from command line
         // TODO use key-values with namespaces to store headers?
-        jobConf.set("hadoopizer.temp.input.header.file", cacheDir.toString() + Path.SEPARATOR + "temp_input_header_file.txt"); // FIXME add output id
+        jobConf.set("hadoopizer.temp.input.header.file", cacheDir.toString() + Path.SEPARATOR + "temp_input_header_file"); // FIXME add output id
         jobConf.set("hadoopizer.temp.output.header.file", cacheDir.toString() + Path.SEPARATOR  + "temp_output_header_file.txt"); // FIXME add output id
         jobConf.set("hadoopizer.binaries.link.name", "binaries");
         jobConf.set("hadoopizer.job.name", "Hadoopizer conf");
