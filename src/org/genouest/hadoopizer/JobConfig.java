@@ -221,7 +221,7 @@ public class JobConfig {
             System.exit(1);
         }
 
-        for(int i = 0; i < inputs.getLength(); i++) {
+        for (int i = 0; i < inputs.getLength(); i++) {
             Element input = (Element) inputs.item(i);
             
             if (!input.hasAttribute("id")) {
@@ -230,32 +230,14 @@ public class JobConfig {
             }
             
             JobInput jobInput = new JobInput(input.getAttribute("id"));
-            
-            boolean isSplitable = input.hasAttribute("splitter") && input.getAttribute("splitter") != "none";
-            if (isSplitable) {
-                jobInput.setSplitterId(input.getAttribute("splitter"));
-            }
-
-            String url = input.getElementsByTagName("url").item(0).getTextContent(); // TODO allow multiple url element if multiple inputpath, and allow simply the url if only one
-            if (url.startsWith("/"))
-                url = "file:" + url;
-            try {
-                jobInput.setUrl(new URI(url));
-            } catch (URISyntaxException e) {
-                System.err.println("Wrong URI format in config file: "+input.getElementsByTagName("url").item(0).getTextContent());
-                e.printStackTrace();
-                System.exit(1);
-            }
-
-            Element urlEl = (Element) input.getElementsByTagName("url").item(0);
-            jobInput.setAutoComplete(!isSplitable && urlEl.hasAttribute("autocomplete") && urlEl.getAttribute("autocomplete").equalsIgnoreCase("true"));
+            jobInput.loadXml(input);
 
             if (jobInput.hasSplitter()) {
                 Hadoopizer.logger.info("Using splitter '"+jobInput.getSplitterId()+"' for input '"+jobInput.getId()+"' ("+jobInput.getUrl()+")");
-                splitableInput = jobInput; // TODO support multiple
+                splitableInput = jobInput;
             }
             else {
-                Hadoopizer.logger.info("No splitting for input '"+jobInput.getId()+"' ("+jobInput.getUrl()+")");			
+                Hadoopizer.logger.info("No splitting for input '"+jobInput.getId()+"' ("+jobInput.getUrl()+")");            
                 staticInputs.add(jobInput);
             }
         }
@@ -402,7 +384,7 @@ public class JobConfig {
         // Splitable input
         Element inputElement = doc.createElement("input");
         rootElement.appendChild(inputElement);
-        inputElement.setAttribute("id", splitableInput.getId());
+        inputElement.setAttribute("id", splitableInput.getId()); // FIXME null pointer if no splitable input (should throw an error)
 
         if (splitableInput.hasSplitter()) {
             inputElement.setAttribute("splitter", splitableInput.getSplitterId());
@@ -495,10 +477,15 @@ public class JobConfig {
 
         String finalCommand = command;
 
-        if (splitableInput.getLocalPath().isEmpty())
-            throw new RuntimeException("Unable to generate command line: the splitable input local path is empty.");
-
-        finalCommand = finalCommand.replaceAll("\\$\\{" + splitableInput.getId() + "\\}", splitableInput.getLocalPath());
+        if (splitableInput.hasAdditionalUrls()) {
+            
+        }
+        else {
+            if (splitableInput.getLocalPath().isEmpty())
+                throw new RuntimeException("Unable to generate command line: the splitable input local path is empty.");
+    
+            finalCommand = finalCommand.replaceAll("\\$\\{" + splitableInput.getId() + "\\}", splitableInput.getLocalPath());
+        }
 
         for (JobInput in : staticInputs) {
             if (in.getLocalPath().isEmpty())

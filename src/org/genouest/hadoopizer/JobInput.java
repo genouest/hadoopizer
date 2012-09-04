@@ -2,6 +2,8 @@ package org.genouest.hadoopizer;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.ServiceLoader;
 
@@ -13,17 +15,55 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 public class JobInput {
 
     private String id;
     private URI url;
+    private ArrayList<URI> additionalUrls = new ArrayList<URI>();
     private String splitterId;
     private String localPath;
+    private ArrayList<String> additionalLocalPath = new ArrayList<String>();
     private boolean autoComplete = false;
 
     public JobInput(String id) {
         this.id = id;
+    }
+
+    /**
+     * Load a JobInput from xml content
+     * 
+     * @param input the xml Element to load
+     */
+    public void loadXml(Element input) {
+
+        boolean isSplitable = input.hasAttribute("splitter") && input.getAttribute("splitter") != "none";
+        if (isSplitable) {
+            setSplitterId(input.getAttribute("splitter"));
+        }
+
+        NodeList urls = input.getElementsByTagName("url");
+        for (int i = 0; i < urls.getLength(); i++) {
+            String url = urls.item(i).getTextContent();
+            
+            if (url.startsWith("/"))
+                url = "file:" + url;
+            try {
+                if (i == 0) {
+                    setUrl(new URI(url));
+                    Element urlEl = (Element) urls.item(0);
+                    setAutoComplete(!isSplitable && urlEl.hasAttribute("autocomplete") && urlEl.getAttribute("autocomplete").equalsIgnoreCase("true"));
+                }
+                else
+                    additionalUrls.add(new URI(url));
+            } catch (URISyntaxException e) {
+                System.err.println("Wrong URI format in config file: "+url);
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
     }
 
     /**
@@ -93,6 +133,36 @@ public class JobInput {
      * @param localPath the localPath to set
      */
     public void setLocalPath(String localPath) {
+        if (isAutoComplete()) {
+            // In the config, the url looks like: /the/local/path/filenameprefix
+            // We receive something like: /some/path/static_input__someid__filenameprefix.txt
+            // We want to keep: /some/path/static_input__someid__filenameprefix
+            Path local = new Path(localPath);
+            Path source = new Path(url);
+            int posMiddle = local.getName().lastIndexOf(source.getName());
+            String prefix = local.getName().substring(0, posMiddle);
+            this.localPath = local.getParent().toString() + Path.SEPARATOR + prefix + source.getName();
+        }
+        else
+            this.localPath = localPath;
+    }
+
+    /**
+     * TODO document
+     * 
+     * @return the additional localPath
+     */
+    public ArrayList<String> getAdditionalLocalPath() {
+        return additionalLocalPath;
+    }
+
+    /**
+     * TODO document
+     * 
+     * @param localPath the localPath to set
+     */
+    public void setAdditionalLocalPath(ArrayList<String> additionalLocalPath) {
+        // FIXME finish this before testing
         if (isAutoComplete()) {
             // In the config, the url looks like: /the/local/path/filenameprefix
             // We receive something like: /some/path/static_input__someid__filenameprefix.txt
@@ -194,5 +264,26 @@ public class JobInput {
         }
         
         throw new RuntimeException("Could not find a suitable OutputFormat service for id '" + getSplitterId() + "'");
+    }
+
+    /**
+     * @return the additionalUrls
+     */
+    public ArrayList<URI> getAdditionalUrls() {
+        return additionalUrls;
+    }
+
+    /**
+     * @param additionalUrls the additionalUrls to set
+     */
+    public void setAdditionalUrls(ArrayList<URI> additionalUrls) {
+        this.additionalUrls = additionalUrls;
+    }
+
+    /**
+     * @return true if the JobInput has some additional urls
+     */
+    public boolean hasAdditionalUrls() {
+        return additionalUrls.size() == 0;
     }
 }

@@ -29,7 +29,6 @@ import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable, ObjectWritableComparable, ObjectWritable> { 
 
     private JobConfig config;
-    private File inputFile;
     private RecordWriter<ObjectWritableComparable, ObjectWritable> writer;
 
     @Override
@@ -65,7 +64,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
         // This input file will be used in the command line launched in the cleanup step
         
         HadoopizerOutputFormat outf = config.getSplitableInput().getFileOutputFormat();
-        inputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "input", "."+outf.getExtension());
+        File inputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "input", "."+outf.getExtension());
         
         // We want to add the header from input file to each chunk file
         Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file")); // FIXME add input id

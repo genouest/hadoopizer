@@ -15,5 +15,5 @@
     <outputs>
         <url>/omaha-beach/hadoopizer/output</url>
         <output id="mapped" reducer="sam" />
-    </output>
+    </outputs>
 </job>

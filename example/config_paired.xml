@@ -4,11 +4,8 @@
         blastp -query ${q} -db ${db} -out ${res}
     </command>
     
-    <input id="pair1" splitter="fastq_paired1">
+    <input id="paired" splitter="fastq_paired">
         <url>/local/foo/bar/myfile1.fastq</url>
-    </input>
-    
-    <input id="pair2" splitter="fastq_paired2">
         <url>/local/foo/bar/myfile2.fastq</url>
     </input>
 

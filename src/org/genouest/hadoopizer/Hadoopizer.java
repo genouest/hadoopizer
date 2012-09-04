@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -21,12 +23,23 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.ObjectWritable;
+import org.apache.hadoop.mapred.InputFormat;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
+import org.apache.hadoop.mapred.join.CompositeInputFormat;
+import org.apache.hadoop.mapred.join.TupleWritable;
+import org.apache.hadoop.mapred.lib.IdentityMapper;
+import org.apache.hadoop.mapred.lib.IdentityReducer;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.util.GenericOptionsParser;
+import org.genouest.hadoopizer.input.FastqInputFormat;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 import org.genouest.hadoopizer.mapper.ShellMapper;
@@ -247,7 +260,18 @@ public class Hadoopizer {
      */
     private Job prepareJob() throws IOException {
 
+        boolean joinData = config.getSplitableInput().getAdditionalUrls().size() > 0;
+        
         Path inputPath = new Path(config.getSplitableInput().getUrl());
+        if (joinData) {
+            // TODO allow to use already joined data when reusing input data
+            // There are multiple input data files, join them first in a specific map/reduce job
+            inputPath = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + Path.SEPARATOR + "temp_joined_data");
+            
+            joinInputData(inputPath);
+        }
+        
+        // TODO adapt the mapper to receive data from a CompositeInputFormat loaded from a SequenceFile
         
         // Add static input files to distributed cache
         HashSet<JobInput> inputs = config.getStaticInputs();
@@ -273,8 +297,13 @@ public class Hadoopizer {
         job.setJarByClass(Hadoopizer.class);
         
         // Define input and output data format
-        HadoopizerInputFormat iFormat = config.getSplitableInput().getFileInputFormat();
-        job.setInputFormatClass(iFormat.getClass());
+        if (joinData) {
+            job.setInputFormatClass(SequenceFileInputFormat.class); // FIXME created with old api, will it work?
+        }
+        else {
+            HadoopizerInputFormat iFormat = config.getSplitableInput().getFileInputFormat();
+            job.setInputFormatClass(iFormat.getClass());
+        }
         
 
         HashSet<JobOutput> outputs = config.getJobOutputs();
@@ -306,6 +335,57 @@ public class Hadoopizer {
         FileOutputFormat.setOutputPath(job, new Path(config.getOutputUrl()));
         
         return job;
+    }
+
+    /**
+     * TODO update doc
+     * Prepare a ready to use conf object based on the config loaded from command line args
+     * and xml config file.
+     * Uses the old mapred API as CompositeInputFormat cannot be used with the new one.
+     * 
+     * @return a conf object ready for execution
+     * @throws IOException
+     */
+    private void joinInputData(Path tempOutput) throws IOException {
+
+        Path inputPath = new Path(config.getSplitableInput().getUrl());
+
+        logger.info("Joining input data from following input files:");
+        logger.info("" + inputPath);
+        
+        ArrayList<URI> additionalUrls = config.getSplitableInput().getAdditionalUrls(); // FIXME what if more than 1?
+        ArrayList<Path> allUrls = new ArrayList<Path>();
+        allUrls.add(inputPath);
+        for (URI url : additionalUrls) {
+            allUrls.add(new Path(url));
+            logger.info("" + url);
+        }
+
+        logger.info("Joined data will be placed in temporary file: " + tempOutput);
+
+        // Create the conf and its name
+        JobConf jobConfO = new JobConf(jobConf, Hadoopizer.class);
+        jobConfO.setJobName(jobConf.get("hadoopizer.job.name") + "_data_join");
+
+        jobConfO.setMapperClass(IdentityMapper.class);
+        jobConfO.setReducerClass(IdentityReducer.class);
+        
+        jobConfO.setInputFormat(CompositeInputFormat.class);
+        jobConfO.setOutputFormat(SequenceFileOutputFormat.class);
+
+        jobConfO.setOutputKeyClass(BytesWritable.class);
+        jobConfO.setOutputValueClass(TupleWritable.class);
+        
+        // Set input path
+        Class<? extends InputFormat> inputFormatClass = (Class<? extends InputFormat>) FastqInputFormat.class;
+        jobConfO.set("mapred.join.expr", CompositeInputFormat.compose("inner", inputFormatClass, (Path[]) allUrls.toArray()));
+        
+        // Set output path
+        org.apache.hadoop.mapred.FileOutputFormat.setOutputPath(jobConfO, tempOutput);
+
+        logger.info("Starting join step...");
+        JobClient.runJob(jobConfO);
+        logger.info("Join step finished");
     }
 
     /**
