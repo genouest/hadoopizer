@@ -3,14 +3,14 @@
     <!--this file was created by Eclipse Runnable JAR Export Wizard-->
     <!--ANT 1.7 is required                                        -->
     <target name="create_run_jar">
-        <jar destfile="/udd/abretaud/hadoopizer_latest.jar">
+        <jar destfile="/home/abretaud/hadoopizer_latest.jar">
             <manifest>
                 <attribute name="Main-Class" value="org.genouest.hadoopizer.Hadoopizer"/>
                 <attribute name="Class-Path" value=". hadoopizer_latest_lib/*.jar hadoopizer_latest_lib/endorsed/*.jar"/>
             </manifest>
-            <fileset dir="/udd/abretaud/workspace/hadoopizer/bin"/>
-            <fileset dir="/udd/abretaud/workspace/hadoopizer" includes="resources/*"/>
-            <metainf dir="/udd/abretaud/workspace/hadoopizer/META-INF"/>
+            <fileset dir="/home/abretaud/workspace/hadoopizer/bin"/>
+            <fileset dir="/home/abretaud/workspace/hadoopizer" includes="resources/*"/>
+            <metainf dir="/home/abretaud/workspace/hadoopizer/META-INF"/>
         </jar>
     </target>
 </project>
