@@ -33,11 +33,16 @@ public class SplitableJobInput extends JobInput {
             if (url.startsWith("/"))
                 url = "file:" + url;
             
+            if (!urlEl.hasAttribute("splitter") || urlEl.getAttribute("splitter").contentEquals("")) {
+                System.err.println("You must specify a splitter for url: "+url);
+                System.exit(1);
+            }
+            
             JobInputFile file = new JobInputFile();
             try {
                 file.setUrl(new URI(url));
                 file.setAutoComplete(false); // No autocomplete for splitable input
-                file.setSplitterId(urlEl.getAttribute("splitter")); // FIXME it must exist, check it
+                file.setSplitterId(urlEl.getAttribute("splitter"));
                 files.add(file);
             } catch (URISyntaxException e) {
                 System.err.println("Wrong URI format in config file: "+url);
@@ -80,7 +85,7 @@ public class SplitableJobInput extends JobInput {
             if (file.getLocalPath().isEmpty())
                 throw new RuntimeException("Unable to generate command line: the splitable input local path is empty for url '" + file.getUrl() + "'.");
         
-            cmd = cmd.replaceAll("\\$\\{" + getId() + "\\#" + nb + "\\}", file.getLocalPath()); // FIXME check the regex (#)
+            cmd = cmd.replaceAll("\\$\\{" + getId() + "\\#" + nb + "\\}", file.getLocalPath());
                         
             nb++;
         }
