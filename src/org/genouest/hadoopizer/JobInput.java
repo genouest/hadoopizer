@@ -9,6 +9,11 @@ public abstract class JobInput {
 
     public JobInput(String id) {
         this.id = id;
+        
+        if (!id.matches("[A-Za-z0-9]*")) {
+            System.err.println("Input id can only contain letters and numbers ('"+id+"')");
+            System.exit(1);
+        }
     }
 
     /**
