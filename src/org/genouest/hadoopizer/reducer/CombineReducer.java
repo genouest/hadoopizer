@@ -8,12 +8,11 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
+// TODO comment
 public class CombineReducer extends Reducer<ObjectWritableComparable, ObjectWritable, ObjectWritableComparable, ObjectWritable> {
 
     @Override
-    protected void reduce(ObjectWritableComparable key, Iterable<ObjectWritable> values, Context context) throws IOException, InterruptedException {
-        
-        // TODO comment
+    protected void reduce(ObjectWritableComparable key, Iterable<ObjectWritable> values, Context context) throws IOException, InterruptedException {       
 
         ArrayList<ObjectWritable> list = new ArrayList<ObjectWritable>();
         Hadoopizer.logger.info("for key: " + key.toString());

@@ -95,17 +95,25 @@ public class SplitableJobInput extends JobInput {
 
     @Override
     public void setLocalPath(String localPath) {
-        // TODO wtf?
+        // TODO is it useful?
         
     }
     
-    // TODO document
+    /**
+     * Gets the input files containing the data to split.
+     *
+     * @return the files
+     */
     public ArrayList<JobInputFile> getFiles() {
         
         return files;
     }
     
-    // TODO document
+    /**
+     * Check if the data represented by current instance needs to be joined before being usable for command line
+     *
+     * @return true, if the data need to be joined
+     */
     public boolean needJoin() {
         
         return files.size() > 1;

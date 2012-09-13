@@ -27,14 +27,26 @@ public abstract class JobInput {
      */
     public abstract void loadXml(Element input);
     
-    // TODO document
+    /**
+     * Generate xml Element representing the current instance.
+     *
+     * @param doc an xml document where the xml element should be generated
+     * @return the element representing the JobInput
+     */
     public abstract Element dumpXml(Document doc);
 
-    //TODO document
+    /**
+     * Prepare the command line, replacing variables with local file paths
+     *
+     * @param cmd the command line as specified in the xml file (with variables)
+     * @return the command line with all variables replaced by local paths
+     */
     public abstract String prepareCommand(String cmd);
 
     /**
-     * TODO document
+     * TODO document (and see if it needs refactoring)
+     *
+     * @param localPath the new local path
      */
     public abstract void setLocalPath(String localPath);
 }
