@@ -89,7 +89,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
 
     @Override
     protected void map(ObjectWritableComparable key, ObjectWritable value, Context context) throws IOException, InterruptedException {
-        // TODO support multiple inputs : receive a tuplewritable
+
         for (RecordWriter<ObjectWritableComparable, ObjectWritable> writer : writers) {
             writer.write(key, value);
         }

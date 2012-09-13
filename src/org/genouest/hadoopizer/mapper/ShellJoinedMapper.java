@@ -89,7 +89,6 @@ public class ShellJoinedMapper extends Mapper<ObjectWritableComparable, ObjectWr
 
     @Override
     protected void map(ObjectWritableComparable key, ObjectWritable value, Context context) throws IOException, InterruptedException {
-        // TODO support multiple inputs : receive a tuplewritable
         // FIXME respect order somehow
 
         ObjectWritable[] values = (ObjectWritable[]) value.get();
