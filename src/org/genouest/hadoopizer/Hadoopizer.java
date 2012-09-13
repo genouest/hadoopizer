@@ -304,7 +304,7 @@ public class Hadoopizer {
         for (JobOutput jobOutput : outputs) {
             HadoopizerOutputFormat oFormat = jobOutput.getFileOutputFormat();
             job.setOutputFormatClass(oFormat.getClass());
-            MultipleOutputs.addNamedOutput(job, jobOutput.getId(), oFormat.getClass(), ObjectWritableComparable.class, ObjectWritable.class); // FIXME token must not contain _
+            MultipleOutputs.addNamedOutput(job, jobOutput.getId(), oFormat.getClass(), ObjectWritableComparable.class, ObjectWritable.class);
         }
 
         job.setOutputKeyClass(ObjectWritableComparable.class);

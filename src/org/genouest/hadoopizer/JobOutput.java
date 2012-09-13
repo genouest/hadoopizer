@@ -18,7 +18,7 @@ public class JobOutput {
         
         this.id = id;
         
-        if (!id.matches("[A-Za-z0-9]*")) { // TODO test this
+        if (!id.matches("[A-Za-z0-9]*")) {
             System.err.println("Output id can only contain letters and numbers ('"+id+"')");
             System.exit(1);
         }
