@@ -459,10 +459,10 @@ public class JobConfig {
 
         String finalCommand = command;
 
-        command = splitableInput.prepareCommand(command);
+        finalCommand = splitableInput.prepareCommand(finalCommand);
 
         for (JobInput in : staticInputs) {
-            command = in.prepareCommand(command);
+            finalCommand = in.prepareCommand(finalCommand);
         }
 
         for (JobOutput jobOutput : jobOutputs) {

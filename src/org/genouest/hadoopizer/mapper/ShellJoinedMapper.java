@@ -29,7 +29,7 @@ import org.genouest.hadoopizer.input.HadoopizerRecordReader;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 
-public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable, ObjectWritableComparable, ObjectWritable> {
+public class ShellJoinedMapper extends Mapper<ObjectWritableComparable, ObjectWritable, ObjectWritableComparable, ObjectWritable> {
 
     private JobConfig config;
     private ArrayList<RecordWriter<ObjectWritableComparable, ObjectWritable>> writers = new ArrayList<RecordWriter<ObjectWritableComparable,ObjectWritable>>();
@@ -90,8 +90,14 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
     @Override
     protected void map(ObjectWritableComparable key, ObjectWritable value, Context context) throws IOException, InterruptedException {
         // TODO support multiple inputs : receive a tuplewritable
+        // FIXME respect order somehow
+
+        ObjectWritable[] values = (ObjectWritable[]) value.get();
+        
+        int nb = 0;
         for (RecordWriter<ObjectWritableComparable, ObjectWritable> writer : writers) {
-            writer.write(key, value);
+            writer.write(key, values[nb]);
+            nb++;
         }
     }
 

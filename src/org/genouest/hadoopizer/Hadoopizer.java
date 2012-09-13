@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.UUID;
@@ -22,27 +21,22 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.ObjectWritable;
-import org.apache.hadoop.mapred.InputFormat;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.SequenceFileOutputFormat;
-import org.apache.hadoop.mapred.join.CompositeInputFormat;
-import org.apache.hadoop.mapred.join.TupleWritable;
-import org.apache.hadoop.mapred.lib.IdentityMapper;
-import org.apache.hadoop.mapred.lib.IdentityReducer;
+import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.util.GenericOptionsParser;
-import org.genouest.hadoopizer.input.FastqInputFormat;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
+import org.genouest.hadoopizer.input.MultipleInputFormat;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
+import org.genouest.hadoopizer.mapper.IdentityMapper;
+import org.genouest.hadoopizer.mapper.ShellJoinedMapper;
 import org.genouest.hadoopizer.mapper.ShellMapper;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
+import org.genouest.hadoopizer.reducer.CombineReducer;
 import org.genouest.hadoopizer.reducer.ShellReducer;
 
 public class Hadoopizer {
@@ -297,14 +291,13 @@ public class Hadoopizer {
         
         // Define input and output data format
         if (joinData) {
-            job.setInputFormatClass(SequenceFileInputFormat.class); // FIXME created with old api, will it work?
+            job.setInputFormatClass(SequenceFileInputFormat.class);
         }
         else {
             HadoopizerInputFormat iFormat = splitable.getFiles().get(0).getFileInputFormat(); // FIXME make prettier
             job.setInputFormatClass(iFormat.getClass());
         }
         
-
         HashSet<JobOutput> outputs = config.getJobOutputs();
         for (JobOutput jobOutput : outputs) {
             HadoopizerOutputFormat oFormat = jobOutput.getFileOutputFormat();
@@ -325,7 +318,10 @@ public class Hadoopizer {
         FileInputFormat.setInputPaths(job, inputPath);
 
         // Set the Mapper class
-        job.setMapperClass(ShellMapper.class);
+        if (joinData)
+            job.setMapperClass(ShellJoinedMapper.class);
+        else
+            job.setMapperClass(ShellMapper.class);
 
         // Set the reducer class
         job.setReducerClass(ShellReducer.class); // TODO create a specific one if some outputs types can be reduced before writing
@@ -347,41 +343,53 @@ public class Hadoopizer {
      */
     private void joinInputData(Path tempOutput) throws IOException {
 
+        Job job = new Job(jobConf, jobConf.get("hadoopizer.job.name") + "_data_join");
+        job.setJarByClass(Hadoopizer.class);
+        
         SplitableJobInput splitable = (SplitableJobInput) config.getSplitableInput();
 
         logger.info("Joining input data from following input files:");
         
-        ArrayList<Path> allUrls = new ArrayList<Path>();
         for (JobInputFile file : splitable.getFiles()) {
-            allUrls.add(new Path(file.getUrl()));
+            FileInputFormat.addInputPath(job, new Path(file.getUrl()));
             logger.info("" + file.getUrl());
         }
 
         logger.info("Joined data will be placed in temporary file: " + tempOutput);
 
-        // Create the conf and its name
-        JobConf jobConfO = new JobConf(jobConf, Hadoopizer.class);
-        jobConfO.setJobName(jobConf.get("hadoopizer.job.name") + "_data_join");
-
-        jobConfO.setMapperClass(IdentityMapper.class);
-        jobConfO.setReducerClass(IdentityReducer.class);
+        job.setMapperClass(IdentityMapper.class);
+        job.setReducerClass(CombineReducer.class);
         
-        jobConfO.setInputFormat(CompositeInputFormat.class);
-        jobConfO.setOutputFormat(SequenceFileOutputFormat.class);
+        job.setInputFormatClass(MultipleInputFormat.class);
+        job.setOutputFormatClass(SequenceFileOutputFormat.class);
 
-        jobConfO.setOutputKeyClass(BytesWritable.class);
-        jobConfO.setOutputValueClass(TupleWritable.class);
-        
-        // Set input path
-        Class<? extends InputFormat> inputFormatClass = (Class<? extends InputFormat>) FastqInputFormat.class; // FIXME cast problem!!
-        jobConfO.set("mapred.join.expr", CompositeInputFormat.compose("inner", inputFormatClass, (Path[]) allUrls.toArray(new Path[0])));
+        job.setOutputKeyClass(ObjectWritableComparable.class);
+        job.setOutputValueClass(ObjectWritable.class);
         
         // Set output path
-        org.apache.hadoop.mapred.FileOutputFormat.setOutputPath(jobConfO, tempOutput);
+        FileOutputFormat.setOutputPath(job, tempOutput);
 
         logger.info("Starting join step...");
-        JobClient.runJob(jobConfO);
-        logger.info("Join step finished");
+        
+        boolean success = false;
+        try {
+            success = job.waitForCompletion(true);
+        } catch (InterruptedException e) {
+            System.err.println("Failed joining input data");
+            e.printStackTrace();
+            System.exit(1);
+        } catch (ClassNotFoundException e) {
+            System.err.println("Failed joining input data");
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        if (!success) {
+            logger.severe("The hadoop conf failed!");
+            System.exit(1);
+        }
+        
+        logger.info("Join step finished, now launching the real job");
     }
 
     /**

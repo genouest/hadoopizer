@@ -54,6 +54,7 @@ public class SplitableJobInput extends JobInput {
 
         Element inputElement = doc.createElement("input");
         inputElement.setAttribute("id", getId());
+        inputElement.setAttribute("split", "true");
 
 
         for (JobInputFile file : files) {
@@ -73,13 +74,14 @@ public class SplitableJobInput extends JobInput {
     @Override
     public String prepareCommand(String cmd) {
 
-        int nb = 0;
+        int nb = 1;
         
         for (JobInputFile file : files) {
             if (file.getLocalPath().isEmpty())
                 throw new RuntimeException("Unable to generate command line: the splitable input local path is empty for url '" + file.getUrl() + "'.");
         
-            cmd = cmd.replaceAll("\\$\\{" + getId() + "\\#" + nb + "}", file.getLocalPath()); // FIXME check the regex (#)
+            cmd = cmd.replaceAll("\\$\\{" + getId() + "\\#" + nb + "\\}", file.getLocalPath()); // FIXME check the regex (#)
+                        
             nb++;
         }
         
@@ -88,7 +90,7 @@ public class SplitableJobInput extends JobInput {
 
     @Override
     public void setLocalPath(String localPath) {
-        
+        // TODO wtf?
         
     }
 
