@@ -256,13 +256,16 @@ public class Hadoopizer {
         SplitableJobInput splitable = (SplitableJobInput) config.getSplitableInput();
         boolean joinData = splitable.needJoin();
         
-        Path inputPath = new Path(splitable.getFiles().get(0).getUrl()); // FIXME make it prettier
+        Path inputPath;
         if (joinData) {
             // TODO allow to use already joined data when reusing input data
             // There are multiple input data files, join them first in a specific map/reduce job
             inputPath = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + Path.SEPARATOR + "temp_joined_data");
             
             joinInputData(inputPath);
+        }
+        else {
+            inputPath = new Path(splitable.getFiles().get(0).getUrl());
         }
         
         // Add static input files to distributed cache
