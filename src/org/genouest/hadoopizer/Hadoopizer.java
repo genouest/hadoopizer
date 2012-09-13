@@ -296,7 +296,7 @@ public class Hadoopizer {
             job.setInputFormatClass(SequenceFileInputFormat.class);
         }
         else {
-            HadoopizerInputFormat iFormat = splitable.getFiles().get(0).getFileInputFormat(); // FIXME make prettier
+            HadoopizerInputFormat iFormat = splitable.getFiles().get(0).getFileInputFormat();
             job.setInputFormatClass(iFormat.getClass());
         }
         
@@ -332,13 +332,10 @@ public class Hadoopizer {
     }
 
     /**
-     * TODO update doc
-     * Prepare a ready to use conf object based on the config loaded from command line args
-     * and xml config file.
-     * Uses the old mapred API as CompositeInputFormat cannot be used with the new one.
-     * 
-     * @return a conf object ready for execution
-     * @throws IOException
+     * Launch a Hadoop job to join data from multiple input file. The joined data will be stored to the given path.
+     *
+     * @param tempOutput A temporary location where joined data will be stored. It is highly recommended to put it on HDFS for best possible performances.
+     * @throws IOException Signals that an I/O exception has occurred.
      */
     private void joinInputData(Path tempOutput) throws IOException {
 

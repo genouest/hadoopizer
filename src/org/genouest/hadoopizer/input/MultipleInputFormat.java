@@ -32,7 +32,6 @@ public class MultipleInputFormat extends FileInputFormat<ObjectWritableComparabl
         Path filename = fs.getPath();
         Hadoopizer.logger.info("Looking for input format class for file: " + filename.toString());
         
-
         // Write data chunk to a temporary input file
         // This input file will be used in the command line launched in the cleanup step
         String xmlConfig = conf.get("hadoopizer.job.config");

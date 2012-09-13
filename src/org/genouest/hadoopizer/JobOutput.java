@@ -15,7 +15,13 @@ public class JobOutput {
     private String localPath = "";
 
     public JobOutput(String id) {
+        
         this.id = id;
+        
+        if (!id.matches("[A-Za-z0-9]*")) { // TODO test this
+            System.err.println("Output id can only contain letters and numbers ('"+id+"')");
+            System.exit(1);
+        }
     }
 
     /**
