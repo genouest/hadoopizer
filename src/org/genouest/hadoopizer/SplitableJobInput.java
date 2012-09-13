@@ -98,9 +98,16 @@ public class SplitableJobInput extends JobInput {
         // TODO wtf?
         
     }
-
+    
+    // TODO document
     public ArrayList<JobInputFile> getFiles() {
         
         return files;
+    }
+    
+    // TODO document
+    public boolean needJoin() {
+        
+        return files.size() > 1;
     }
 }

@@ -254,7 +254,7 @@ public class Hadoopizer {
     private Job prepareJob() throws IOException {
         
         SplitableJobInput splitable = (SplitableJobInput) config.getSplitableInput();
-        boolean joinData = splitable.getFiles().size() > 1; // FIXME refactor
+        boolean joinData = splitable.needJoin();
         
         Path inputPath = new Path(splitable.getFiles().get(0).getUrl()); // FIXME make it prettier
         if (joinData) {
