@@ -321,10 +321,7 @@ public class Hadoopizer {
         FileInputFormat.setInputPaths(job, inputPath);
 
         // Set the Mapper class
-        if (joinData)
-            job.setMapperClass(ShellJoinedMapper.class);
-        else
-            job.setMapperClass(ShellMapper.class);
+        job.setMapperClass(ShellMapper.class);
 
         // Set the reducer class
         job.setReducerClass(ShellReducer.class); // TODO create a specific one if some outputs types can be reduced before writing

@@ -33,6 +33,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
 
     private JobConfig config;
     private ArrayList<RecordWriter<ObjectWritableComparable, ObjectWritable>> writers = new ArrayList<RecordWriter<ObjectWritableComparable,ObjectWritable>>();
+    boolean joinData;
 
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
@@ -43,6 +44,10 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
         String xmlConfig = conf.get("hadoopizer.job.config");
         config = new JobConfig();
         config.load(xmlConfig);
+
+        // Is the data joined?
+        SplitableJobInput splitable = (SplitableJobInput) config.getSplitableInput();
+        joinData = splitable.needJoin();
 
         // Download static files
         File workDir = new File(""); // The local work dir
@@ -65,7 +70,6 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
 
         // Write data chunk to a temporary input file
         // This input file will be used in the command line launched in the cleanup step
-        SplitableJobInput splitable = (SplitableJobInput) config.getSplitableInput();
         int nb = 0;
         for (JobInputFile file : splitable.getFiles()) {
             
@@ -90,8 +94,22 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
     @Override
     protected void map(ObjectWritableComparable key, ObjectWritable value, Context context) throws IOException, InterruptedException {
 
-        for (RecordWriter<ObjectWritableComparable, ObjectWritable> writer : writers) {
-            writer.write(key, value);
+        // 'value' can be an ObjectWritable ready to write to temp file
+        // if the input data was joined (multiple input file), it contains a ObjectWritable[], each element corresponding to one of the input file
+        
+        if (!joinData) {
+            writers.get(0).write(key, value);
+        }
+        else { // data was joined
+            // FIXME respect order somehow
+
+            ObjectWritable[] values = (ObjectWritable[]) value.get();
+            
+            int nb = 0;
+            for (RecordWriter<ObjectWritableComparable, ObjectWritable> writer : writers) {
+                writer.write(key, values[nb]);
+                nb++;
+            }
         }
     }
 
