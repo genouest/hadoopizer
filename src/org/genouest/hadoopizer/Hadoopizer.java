@@ -33,7 +33,6 @@ import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.input.MultipleInputFormat;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 import org.genouest.hadoopizer.mapper.IdentityMapper;
-import org.genouest.hadoopizer.mapper.ShellJoinedMapper;
 import org.genouest.hadoopizer.mapper.ShellMapper;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 import org.genouest.hadoopizer.reducer.CombineReducer;
