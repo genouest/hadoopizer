@@ -21,8 +21,6 @@ import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
 public class MultipleInputFormat extends FileInputFormat<ObjectWritableComparable, ObjectWritable> {
 
-    private Path headerTempFile;
-
     @Override
     public RecordReader<ObjectWritableComparable, ObjectWritable> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
 
@@ -39,13 +37,20 @@ public class MultipleInputFormat extends FileInputFormat<ObjectWritableComparabl
         config.load(xmlConfig);
         
         SplitableJobInput splitable = (SplitableJobInput) config.getSplitableInput();
+        int nb = 0;
         for (JobInputFile file : splitable.getFiles()) {
             if (file.getUrl().toString().compareTo(filename.toString()) == 0) {
                 HadoopizerInputFormat inf = file.getFileInputFormat();
                 
+                // There are multiple input: header temp file must have different names
+                Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file") + "_" + splitable.getId() + "_" + nb);
+                inf.setHeaderTempFile(headerFile);
+                
                 Hadoopizer.logger.info("Found an input format class: " + inf.getClass().getCanonicalName());
                 return inf.createRecordReader(split, context);
             }
+            
+            nb++;
         }
         
         System.err.println("Could not find an input format class for: " + filename);
@@ -54,41 +59,10 @@ public class MultipleInputFormat extends FileInputFormat<ObjectWritableComparabl
     }
 
     @Override
-    // TODO adapt
     protected boolean isSplitable(JobContext context, Path filename) {
         
         CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration()).getCodec(filename);
         
         return codec == null;
-    }
-
-    /**
-     * Get a file where input file header can be saved
-     * 
-     * @param conf The conf configuration
-     * @return A Path object for the temporary header file
-     */
-    // TODO adapt
-    public Path getHeaderTempFile(Configuration conf) {
-        
-        if (headerTempFile == null) {
-            // No special temp file defined to save header content, use the default one
-            String headerFileName = conf.get("hadoopizer.temp.input.header.file"); // FIXME add input id
-            if (headerFileName != null &&  !headerFileName.isEmpty())
-                headerTempFile = new Path(headerFileName);
-        }
-        
-        return headerTempFile;
-    }
-    
-    /**
-     * Set a file where input file header can be saved
-     * 
-     * @param headerTempFile The path where input header should be saved
-     */
-    // TODO adapt
-    public void setHeaderTempFile(Path headerTempFile) {
-        
-        this.headerTempFile = headerTempFile;
     }
 }

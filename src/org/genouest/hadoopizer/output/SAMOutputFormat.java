@@ -24,10 +24,10 @@ public class SAMOutputFormat extends HadoopizerOutputFormat {
 
         FSDataOutputStream out = fs.create(path, true);
         if (codec == null) {
-            return new SAMRecordWriter(out, context, getHeaderTempFile(conf));
+            return new SAMRecordWriter(out, context, getHeaderTempFile(conf, path));
         }
         else {
-            return new SAMRecordWriter(new DataOutputStream(codec.createOutputStream(out)), context, getHeaderTempFile(conf));
+            return new SAMRecordWriter(new DataOutputStream(codec.createOutputStream(out)), context, getHeaderTempFile(conf, path));
         }
     }
 

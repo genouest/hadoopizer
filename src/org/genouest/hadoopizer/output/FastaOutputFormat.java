@@ -24,10 +24,10 @@ public class FastaOutputFormat extends HadoopizerOutputFormat {
 
         FSDataOutputStream out = fs.create(path, true);
         if (codec == null) {
-            return new FastaRecordWriter(out, context, getHeaderTempFile(conf));
+            return new FastaRecordWriter(out, context, getHeaderTempFile(conf, path));
         }
         else {
-            return new FastaRecordWriter(new DataOutputStream(codec.createOutputStream(out)), context, getHeaderTempFile(conf));
+            return new FastaRecordWriter(new DataOutputStream(codec.createOutputStream(out)), context, getHeaderTempFile(conf, path));
         }
     }
 

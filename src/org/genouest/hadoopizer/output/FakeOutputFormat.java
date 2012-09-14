@@ -24,10 +24,10 @@ public class FakeOutputFormat extends HadoopizerOutputFormat { // FIXME just for
 
         FSDataOutputStream out = fs.create(path, true);
         if (codec == null) {
-            return new FakeRecordWriter(out, context, getHeaderTempFile(conf));
+            return new FakeRecordWriter(out, context, getHeaderTempFile(conf, path));
         }
         else {
-            return new FakeRecordWriter(new DataOutputStream(codec.createOutputStream(out)), context, getHeaderTempFile(conf));
+            return new FakeRecordWriter(new DataOutputStream(codec.createOutputStream(out)), context, getHeaderTempFile(conf, path));
         }
     }
 

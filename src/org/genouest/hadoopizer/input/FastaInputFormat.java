@@ -11,6 +11,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
 public class FastaInputFormat extends HadoopizerInputFormat {
@@ -20,7 +21,10 @@ public class FastaInputFormat extends HadoopizerInputFormat {
         
         Configuration conf = context.getConfiguration();
         
-        return new FastaRecordReader(getHeaderTempFile(conf), conf);
+        FileSplit fs = (FileSplit) split;
+        Path filename = fs.getPath();
+        
+        return new FastaRecordReader(getHeaderTempFile(conf, filename), conf);
     }
 
     @Override

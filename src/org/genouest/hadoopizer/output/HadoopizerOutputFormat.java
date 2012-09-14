@@ -35,13 +35,17 @@ public abstract class HadoopizerOutputFormat extends FileOutputFormat<ObjectWrit
      * Get a file where output file header can be saved
      * 
      * @param conf The conf configuration
-     * @return A Path object for the temporary header file
+     * @return A Path object to the output file
      */
-    public Path getHeaderTempFile(Configuration conf) {
+    public Path getHeaderTempFile(Configuration conf, Path filename) {
         
         if (headerTempFile == null) {
-            // No special temp file defined to save header content, use the default one
-            String headerFileName = conf.get("hadoopizer.temp.output.header.file"); // FIXME add output id
+            
+            String id = filename.getName();
+            id = id.substring(0, id.indexOf("-"));
+            
+            String headerFileName = conf.get("hadoopizer.temp.output.header.file") + "_" + id;
+            
             if (headerFileName != null &&  !headerFileName.isEmpty())
                 headerTempFile = new Path(headerFileName);
         }

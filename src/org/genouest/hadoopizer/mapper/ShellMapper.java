@@ -77,7 +77,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
             File inputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "input_" + nb, "."+outf.getExtension());
             
             // We want to add the header from input file to each chunk file
-            Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file") + "_" + nb); // FIXME this is a mess, check it works with multiple
+            Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file") + "_" + splitable.getId() + "_" + nb); // FIXME this is a mess, check it works with multiple
             outf.setHeaderTempFile(headerFile);
             
             RecordWriter<ObjectWritableComparable, ObjectWritable> writer = (RecordWriter<ObjectWritableComparable, ObjectWritable>) outf.getRecordWriter(context, new Path("file:"+inputFile.getAbsolutePath()), null);
@@ -107,7 +107,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
             
             int nb = 0;
             for (RecordWriter<ObjectWritableComparable, ObjectWritable> writer : writers) {
-                writer.write(key, values[nb]);
+                writer.write(key, values[nb]); // FIXME check that there is the same number of element (if not, which file did it came from). it has something to do with the order
                 nb++;
             }
         }
