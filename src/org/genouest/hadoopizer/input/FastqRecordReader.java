@@ -16,6 +16,7 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.LineReader;
 import org.genouest.hadoopizer.Hadoopizer;
+import org.genouest.hadoopizer.io.InputDataWritable;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
 /**
@@ -78,6 +79,8 @@ public class FastqRecordReader extends HadoopizerRecordReader {
         }
         
         headerFinished(); // No header in fastq
+        
+        trackOrigin(conf, path);
     }
 
     /**
@@ -199,7 +202,8 @@ public class FastqRecordReader extends HadoopizerRecordReader {
     @Override
     public ObjectWritable getCurrentValue() throws IOException, InterruptedException {
 
-        return new ObjectWritable(recordValue);
+        InputDataWritable data = new InputDataWritable(getInputId(), new ObjectWritable(recordValue));
+        return new ObjectWritable(data); // FIXME pass the inputid somehow
     }
 
     @Override

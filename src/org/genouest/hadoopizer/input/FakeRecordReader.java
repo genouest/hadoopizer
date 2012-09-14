@@ -15,6 +15,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.LineReader;
+import org.genouest.hadoopizer.io.InputDataWritable;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
 /**
@@ -74,6 +75,8 @@ public class FakeRecordReader extends HadoopizerRecordReader {
             Text tmp = new Text("");
             pos += lineReader.readLine(tmp);
         }
+        
+        trackOrigin(conf, path);
     }
     
     @Override
@@ -117,7 +120,7 @@ public class FakeRecordReader extends HadoopizerRecordReader {
 
         ObjectWritableComparable key = new ObjectWritableComparable();
         key.set("", recordKey);
-        return key; // FIXME no key ?
+        return key;
     }
     
     @Override
@@ -131,7 +134,8 @@ public class FakeRecordReader extends HadoopizerRecordReader {
     @Override
     public ObjectWritable getCurrentValue() throws IOException, InterruptedException {
 
-        return new ObjectWritable(recordValue);
+        InputDataWritable data = new InputDataWritable(getInputId(), new ObjectWritable(recordValue));
+        return new ObjectWritable(data); // FIXME pass the inputid somehow
     }
 
     @Override

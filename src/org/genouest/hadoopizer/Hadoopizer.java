@@ -404,7 +404,6 @@ public class Hadoopizer {
         
         // First define some default settings
         Path cacheDir = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir")); // Defined from command line
-        // TODO use key-values with namespaces to store headers?
         jobConf.set("hadoopizer.temp.input.header.file", cacheDir.toString() + Path.SEPARATOR + "temp_input_header_file");
         jobConf.set("hadoopizer.temp.output.header.file", cacheDir.toString() + Path.SEPARATOR  + "temp_output_header_file");
         jobConf.set("hadoopizer.binaries.link.name", "binaries");

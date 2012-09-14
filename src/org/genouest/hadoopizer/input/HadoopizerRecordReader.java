@@ -8,12 +8,16 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.mapreduce.RecordReader;
+import org.genouest.hadoopizer.JobConfig;
+import org.genouest.hadoopizer.JobInputFile;
+import org.genouest.hadoopizer.SplitableJobInput;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
 public abstract class HadoopizerRecordReader extends RecordReader<ObjectWritableComparable, ObjectWritable> {
 
     private Path headerTempFile;
     private FSDataOutputStream headerOut;
+    protected int inputId = 0; // id corresponding to the input file where we're reading from. This is used to track data origin during map phase
 
     /**
      * Create a HadoopizerRecordReader
@@ -85,6 +89,28 @@ public abstract class HadoopizerRecordReader extends RecordReader<ObjectWritable
 
         if (headerOut != null)
             headerOut.close();
+    }
+    
+    // FIXME document
+    protected void trackOrigin(Configuration conf, Path path) {
+        String xmlConfig = conf.get("hadoopizer.job.config");
+        JobConfig config = new JobConfig();
+        config.load(xmlConfig);
+        SplitableJobInput splitable = (SplitableJobInput) config.getSplitableInput();
+        int nb = 0;
+        for (JobInputFile file : splitable.getFiles()) {
+            if (file.getUrl().toString().compareTo(path.toString()) == 0) {
+                inputId = nb;
+                break;
+            }
+            
+            nb++;
+        }
+    }
+
+    // FIXME document
+    public int getInputId() {
+        return inputId;
     }
 
     // TODO document

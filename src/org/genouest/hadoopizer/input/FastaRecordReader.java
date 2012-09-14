@@ -14,6 +14,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.LineReader;
+import org.genouest.hadoopizer.io.InputDataWritable;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
 /**
@@ -79,6 +80,8 @@ public class FastaRecordReader extends HadoopizerRecordReader {
         readUntilNextRecord();
         
         headerFinished(); // No header in fasta
+        
+        trackOrigin(conf, path);
     }
 
     /**
@@ -136,7 +139,7 @@ public class FastaRecordReader extends HadoopizerRecordReader {
     public ObjectWritableComparable getCurrentKey() throws IOException, InterruptedException {
         
         ObjectWritableComparable key = new ObjectWritableComparable();
-        key.set("", recordKey); // FIXME no key
+        key.set("", recordKey);
         return key;
     }
     
@@ -151,7 +154,8 @@ public class FastaRecordReader extends HadoopizerRecordReader {
     @Override
     public ObjectWritable getCurrentValue() throws IOException, InterruptedException {
 
-        return new ObjectWritable(recordValue);
+        InputDataWritable data = new InputDataWritable(getInputId(), new ObjectWritable(recordValue));
+        return new ObjectWritable(data); // FIXME pass the inputid somehow
     }
 
     @Override

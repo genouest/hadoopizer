@@ -14,6 +14,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.LineReader;
+import org.genouest.hadoopizer.io.InputDataWritable;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
 /**
@@ -73,6 +74,8 @@ public class SAMRecordReader extends HadoopizerRecordReader {
             Text tmp = new Text("");
             pos += lineReader.readLine(tmp);
         }
+        
+        trackOrigin(conf, path);
     }
     
     @Override
@@ -132,7 +135,9 @@ public class SAMRecordReader extends HadoopizerRecordReader {
     @Override
     public ObjectWritable getCurrentValue() throws IOException, InterruptedException {
 
-        return new ObjectWritable(recordValue);
+        InputDataWritable data = new InputDataWritable(getInputId(), new ObjectWritable(recordValue));
+        return new ObjectWritable(data);
+        // FIXME wrapping in an objectwritable is useless
     }
 
     @Override

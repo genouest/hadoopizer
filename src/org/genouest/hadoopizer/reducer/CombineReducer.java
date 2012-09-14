@@ -16,7 +16,7 @@ public class CombineReducer extends Reducer<ObjectWritableComparable, ObjectWrit
         ArrayList<ObjectWritable> list = new ArrayList<ObjectWritable>();
         for (ObjectWritable value : values) {
             list.add(value);
-        } // FIXME problem if the number of values is different from the number of input files
+        }
         
         ObjectWritable out = new ObjectWritable(ObjectWritable[].class, (ObjectWritable[]) list.toArray(new ObjectWritable[0]));
         

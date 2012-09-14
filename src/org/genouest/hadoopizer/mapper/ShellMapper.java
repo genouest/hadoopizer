@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ObjectWritable;
+import org.apache.hadoop.mapred.join.TupleWritable;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -26,6 +27,7 @@ import org.genouest.hadoopizer.JobOutput;
 import org.genouest.hadoopizer.SplitableJobInput;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.input.HadoopizerRecordReader;
+import org.genouest.hadoopizer.io.InputDataWritable;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 
@@ -77,7 +79,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
             File inputFile = Hadoopizer.createTempFile(new File(System.getProperty("java.io.tmpdir")), "input_" + nb, "."+outf.getExtension());
             
             // We want to add the header from input file to each chunk file
-            Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file") + "_" + splitable.getId() + "_" + nb); // FIXME this is a mess, check it works with multiple
+            Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file") + "_" + splitable.getId() + "_" + nb);
             outf.setHeaderTempFile(headerFile);
             
             RecordWriter<ObjectWritableComparable, ObjectWritable> writer = (RecordWriter<ObjectWritableComparable, ObjectWritable>) outf.getRecordWriter(context, new Path("file:"+inputFile.getAbsolutePath()), null);
@@ -98,17 +100,23 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
         // if the input data was joined (multiple input file), it contains a ObjectWritable[], each element corresponding to one of the input file
         
         if (!joinData) {
-            writers.get(0).write(key, value);
+            TupleWritable tw = (TupleWritable) value.get();
+            writers.get(0).write(key, (ObjectWritable) tw.get(1));
         }
         else { // data was joined
-            // FIXME respect order somehow
 
             ObjectWritable[] values = (ObjectWritable[]) value.get();
+            int nbWriters = writers.size();
             
-            int nb = 0;
-            for (RecordWriter<ObjectWritableComparable, ObjectWritable> writer : writers) {
-                writer.write(key, values[nb]); // FIXME check that there is the same number of element (if not, which file did it came from). it has something to do with the order
-                nb++;
+            for (int i = 0; i < values.length; i++) {
+                
+                InputDataWritable data = (InputDataWritable) values[i].get();
+                int inputId = data.getInputId();
+                if (inputId >= nbWriters)
+                    throw new RuntimeException("Unexpected input data.");
+                
+                
+                writers.get(inputId).write(key, data.getData());
             }
         }
     }
