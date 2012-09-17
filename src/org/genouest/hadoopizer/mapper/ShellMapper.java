@@ -99,7 +99,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
         // if the input data was joined (multiple input file), it contains a ObjectWritable[], each element corresponding to one of the input file
         
         if (!joinData) {
-            InputDataWritable tw = (InputDataWritable) value.get(); // FIXME test this
+            InputDataWritable tw = (InputDataWritable) value.get();
             writers.get(0).write(key, (ObjectWritable) tw.getData());
         }
         else { // data was joined
