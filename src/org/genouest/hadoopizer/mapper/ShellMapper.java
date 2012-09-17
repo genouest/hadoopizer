@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ObjectWritable;
-import org.apache.hadoop.mapred.join.TupleWritable;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -100,8 +99,8 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
         // if the input data was joined (multiple input file), it contains a ObjectWritable[], each element corresponding to one of the input file
         
         if (!joinData) {
-            TupleWritable tw = (TupleWritable) value.get(); // FIXME update this piece of shit
-            writers.get(0).write(key, (ObjectWritable) tw.get(1));
+            InputDataWritable tw = (InputDataWritable) value.get(); // FIXME test this
+            writers.get(0).write(key, (ObjectWritable) tw.getData());
         }
         else { // data was joined
 

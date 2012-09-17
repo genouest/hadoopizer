@@ -85,7 +85,10 @@ public class SplitableJobInput extends JobInput {
             if (file.getLocalPath().isEmpty())
                 throw new RuntimeException("Unable to generate command line: the splitable input local path is empty for url '" + file.getUrl() + "'.");
         
-            cmd = cmd.replaceAll("\\$\\{" + getId() + "\\#" + nb + "\\}", file.getLocalPath());
+            String multipleSuffix = "";
+            if (needJoin())
+                multipleSuffix = "\\#" + nb;
+            cmd = cmd.replaceAll("\\$\\{" + getId() + multipleSuffix + "\\}", file.getLocalPath());
                         
             nb++;
         }
