@@ -30,7 +30,7 @@
       <!--url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/</url-->
       <!-- any other protocol? -->
       
-      <output id="res" reducer="blast" format="sequence" />
+      <output id="res" reducer="blast" sequence="true" />
       <output id="res2" reducer="fasta" />
     </outputs>
     

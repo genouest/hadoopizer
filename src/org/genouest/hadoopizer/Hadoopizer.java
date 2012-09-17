@@ -304,9 +304,16 @@ public class Hadoopizer {
         
         HashSet<JobOutput> outputs = config.getJobOutputs();
         for (JobOutput jobOutput : outputs) {
-            HadoopizerOutputFormat oFormat = jobOutput.getFileOutputFormat();
-            job.setOutputFormatClass(oFormat.getClass());
-            MultipleOutputs.addNamedOutput(job, jobOutput.getId(), oFormat.getClass(), ObjectWritableComparable.class, ObjectWritable.class);
+            if (jobOutput.isSaveAsSequence()) {
+                Hadoopizer.logger.info("Output " + jobOutput.getId() + " will be saved in Sequence format.");
+                job.setOutputFormatClass(SequenceFileOutputFormat.class);
+                MultipleOutputs.addNamedOutput(job, jobOutput.getId(), SequenceFileOutputFormat.class, ObjectWritableComparable.class, ObjectWritable.class);
+            }
+            else {
+                HadoopizerOutputFormat oFormat = jobOutput.getFileOutputFormat();
+                job.setOutputFormatClass(oFormat.getClass());
+                MultipleOutputs.addNamedOutput(job, jobOutput.getId(), oFormat.getClass(), ObjectWritableComparable.class, ObjectWritable.class);
+            }
         }
 
         job.setOutputKeyClass(ObjectWritableComparable.class);

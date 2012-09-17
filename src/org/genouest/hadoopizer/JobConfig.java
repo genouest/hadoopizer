@@ -229,7 +229,7 @@ public class JobConfig {
                 System.exit(1);
             }
             
-            boolean isSplitable = input.hasAttribute("split") && (input.getAttribute("split").contentEquals("true"));
+            boolean isSplitable = input.hasAttribute("split") && (input.getAttribute("split").compareToIgnoreCase("true") == 0);
             if (isSplitable) {
                 JobInput jobInput = new SplitableJobInput(input.getAttribute("id"));
                 jobInput.loadXml(input);
@@ -321,9 +321,9 @@ public class JobConfig {
 
             // Reducer
             jobOutput.setReducerId(output.getAttribute("reducer"));
-            if (output.hasAttribute("format") && output.getAttribute("format").equalsIgnoreCase("sequence")) {
+            if (output.hasAttribute("sequence") && output.getAttribute("sequence").equalsIgnoreCase("true")) {
                 // The output needs to be stored as hadoop SequenceFile for reuse in a future hadoop conf
-                jobOutput.setSequenceOutput(true);
+                jobOutput.setSaveAsSequence(true);
             }
             
             jobOutputs.add(jobOutput);
@@ -387,8 +387,8 @@ public class JobConfig {
             outputsElement.appendChild(outputElement);
             outputElement.setAttribute("id", jobOutput.getId());
             outputElement.setAttribute("reducer", jobOutput.getReducerId());
-            if (jobOutput.isSequenceOutput()) {
-                outputElement.setAttribute("format", "sequence");
+            if (jobOutput.isSaveAsSequence()) {
+                outputElement.setAttribute("sequence", "true");
             }
         }
 

@@ -11,7 +11,7 @@ public class JobOutput {
 
     private String id;
     private String reducerId;
-    private boolean sequenceOutput = false;
+    private boolean saveAsSequence = false;
     private String localPath = "";
 
     public JobOutput(String id) {
@@ -74,18 +74,18 @@ public class JobOutput {
      * 
      * @return true if the output should be saved in SequenceFile format
      */
-    public boolean isSequenceOutput() {
-        // TODO implement saving as sequencefile
-        return sequenceOutput;
+    // TODO implement loading from sequencefile (with or without join support)
+    public boolean isSaveAsSequence() {
+        return saveAsSequence;
     }
 
     /**
      * Set wether the output should be saved in SequenceFile format
      * 
-     * @param sequenceOutput true if the output should be saved in SequenceFile format
+     * @param saveAsSequence true if the output should be saved in SequenceFile format
      */
-    public void setSequenceOutput(boolean sequenceOutput) {
-        this.sequenceOutput = sequenceOutput;
+    public void setSaveAsSequence(boolean saveAsSequence) {
+        this.saveAsSequence = saveAsSequence;
     }
 
     /**
