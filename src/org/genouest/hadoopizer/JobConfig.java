@@ -518,7 +518,7 @@ public class JobConfig {
 
         for (JobInput in : staticInputs) {
             if (in.getId().equals(id)) {
-                in.setLocalPath(path);
+                ((StaticJobInput) in).setLocalPath(path);
                 found = true;
             }
         }

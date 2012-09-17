@@ -95,12 +95,6 @@ public class SplitableJobInput extends JobInput {
         
         return cmd;
     }
-
-    @Override
-    public void setLocalPath(String localPath) {
-        // TODO is it useful?
-        
-    }
     
     /**
      * Gets the input files containing the data to split.

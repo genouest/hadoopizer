@@ -47,11 +47,4 @@ public abstract class JobInput {
      * @return the command line with all variables replaced by local paths
      */
     public abstract String prepareCommand(String cmd);
-
-    /**
-     * TODO document (and see if it needs refactoring)
-     *
-     * @param localPath the new local path
-     */
-    public abstract void setLocalPath(String localPath);
 }

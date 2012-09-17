@@ -65,7 +65,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
                 fileId = m.group(1);
                 Hadoopizer.logger.info("Found the static input file '" + fileId + "' in the distributed cache: " + workFiles[i].toString());
 
-                config.setStaticInputLocalPath(fileId, workFiles[i].toString()); // FIXME maybe some refactoring here
+                config.setStaticInputLocalPath(fileId, workFiles[i].toString());
             }
         }
 

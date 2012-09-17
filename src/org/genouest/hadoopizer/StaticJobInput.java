@@ -79,7 +79,11 @@ public class StaticJobInput extends JobInput {
         return cmd;
     }
 
-    @Override
+    /**
+     * Sets the local path.
+     *
+     * @param localPath the new local path
+     */
     public void setLocalPath(String localPath) {
         
         file.setLocalPath(localPath);
