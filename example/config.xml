@@ -4,22 +4,20 @@
         blastp -query ${q} -db ${db} -out ${res}
     </command>
     
-    <input id="q" splitter="fasta"><!-- only one allowed with splitter -->
+    <input id="q" split="true"><!-- only one allowed with splitter -->
         <!-- s3n, local, ... = only one url per input -->
-        <url>/local/foo/bar/myfile.fasta</url>
-        <!--url>hdfs://pouet/myfile.fasta</url-->
-        <!--url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/myfile.fasta</url-->
-        <!--url>http://example.org/myfile.fasta</url--> <!-- need download or hadoop understands it? -->
-        <!-- any other protocol? -->
+        <url splitter="fasta">/local/foo/bar/myfile.fasta</url>
+        <!--url splitter="fasta">hdfs://pouet/myfile.fasta</url-->
+        <!--url splitter="fasta">s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/myfile.fasta</url-->
+        <!--url splitter="fasta">http://example.org/myfile.fasta</url-->
     </input>
 
-    <input id="db" splitter="none"> <!-- splitter attribute can be omitted or set to none -->
+    <input id="db"> <!-- split attribute can be omitted or set to none -->
         <!-- s3n, local, ... = only one url per input -->
-        <url autocomplete="true">/local/foo/bar/myfile</url> <!-- 2 cases here: on nfs (need to be uploaded with -files option) or not (no need to upload) -->
-        <!--url>hdfs://pouet/myfile.fasta</url--> <!-- is it possible as hadoop input? -->
+        <url autocomplete="true">/local/foo/bar/myfile</url>
+        <!--url>hdfs://pouet/myfile.fasta</url-->
         <!--url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/myfile.fasta</url-->
-        <!--url>http://example.org/myfile.fasta</url--> <!-- need download+upload or hadoop understands it? -->
-        <!-- any other protocol? -->
+        <!--url>http://example.org/myfile.fasta</url-->
     </input>
     
     <outputs>
@@ -29,7 +27,7 @@
       
       <url>/local/foo/bar</url> <!-- how is it handled? -->
       <!--url>hdfs://pouet/</url--> <!-- how is it handled? -->
-      <!--url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/</url--> <!-- how is it handled? -->
+      <!--url>s3n://AWS-ID:AWS-SECRET-KEY@BUCKET-NAME/</url-->
       <!-- any other protocol? -->
       
       <output id="res" reducer="blast" format="sequence" />

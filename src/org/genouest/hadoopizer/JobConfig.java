@@ -229,7 +229,7 @@ public class JobConfig {
                 System.exit(1);
             }
             
-            boolean isSplitable = input.hasAttribute("split") && input.getAttribute("split") != "true";
+            boolean isSplitable = input.hasAttribute("split") && (input.getAttribute("split").contentEquals("true"));
             if (isSplitable) {
                 JobInput jobInput = new SplitableJobInput(input.getAttribute("id"));
                 jobInput.loadXml(input);
