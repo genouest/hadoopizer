@@ -91,7 +91,12 @@ public abstract class HadoopizerRecordReader extends RecordReader<ObjectWritable
             headerOut.close();
     }
     
-    // FIXME document
+    /**
+     * Keep a track of the file where the Split comes from. You need to call this in the initialize() method. 
+     *
+     * @param conf the conf
+     * @param path the path where we're reading from
+     */
     protected void trackOrigin(Configuration conf, Path path) {
         String xmlConfig = conf.get("hadoopizer.job.config");
         JobConfig config = new JobConfig();
@@ -108,11 +113,22 @@ public abstract class HadoopizerRecordReader extends RecordReader<ObjectWritable
         }
     }
 
-    // FIXME document
+    /**
+     * Gets the input id corresponding to the file where the data was read from. 
+     *
+     * @return the input id
+     */
     public int getInputId() {
         return inputId;
     }
 
-    // TODO document
+    /**
+     * Get the current key, with given id to put in the {@link ObjectWritableComparable}.
+     *
+     * @param id the id
+     * @return the current key or null if there is no current key
+     * @throws IOException Signals that an I/O exception has occurred.
+     * @throws InterruptedException the interrupted exception
+     */
     public abstract ObjectWritableComparable getCurrentKey(String id) throws IOException, InterruptedException;
 }

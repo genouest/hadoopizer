@@ -8,6 +8,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.io.Writable;
 
+/**
+ * Contains some data (stored as an {@link ObjectWritable}) and an integer id allowing to keep track of the origin of the data
+ */
 public class InputDataWritable implements Writable {
 
     private int inputId;

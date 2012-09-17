@@ -13,8 +13,6 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableFactories;
 
-// TODO write doc
-
 public class ObjectWritableComparable implements WritableComparable<ObjectWritableComparable> {
 
     private String keyType;

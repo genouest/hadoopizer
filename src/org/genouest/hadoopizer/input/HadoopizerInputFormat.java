@@ -21,12 +21,12 @@ public abstract class HadoopizerInputFormat extends FileInputFormat<ObjectWritab
     public abstract String getId();
 
     /**
-     * Get a file where input file header can be saved
-     * 
+     * Get a file where input file header can be saved.
+     *
      * @param conf The conf configuration
+     * @param file the file from which we want to read the header
      * @return A Path object for the temporary header file
      */
-    // TODO update doc
     public Path getHeaderTempFile(Configuration conf, Path file) {
         
         if (headerTempFile == null) {

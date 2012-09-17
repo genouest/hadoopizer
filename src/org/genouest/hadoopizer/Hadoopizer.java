@@ -35,7 +35,7 @@ import org.genouest.hadoopizer.io.ObjectWritableComparable;
 import org.genouest.hadoopizer.mapper.IdentityMapper;
 import org.genouest.hadoopizer.mapper.ShellMapper;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
-import org.genouest.hadoopizer.reducer.CombineReducer;
+import org.genouest.hadoopizer.reducer.JoinReducer;
 import org.genouest.hadoopizer.reducer.ShellReducer;
 
 public class Hadoopizer {
@@ -354,7 +354,7 @@ public class Hadoopizer {
         logger.info("Joined data will be placed in temporary file: " + tempOutput);
 
         job.setMapperClass(IdentityMapper.class);
-        job.setReducerClass(CombineReducer.class);
+        job.setReducerClass(JoinReducer.class);
         
         job.setInputFormatClass(MultipleInputFormat.class);
         job.setOutputFormatClass(SequenceFileOutputFormat.class);

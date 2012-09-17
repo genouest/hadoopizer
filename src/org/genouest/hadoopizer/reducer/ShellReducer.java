@@ -20,7 +20,6 @@ public class ShellReducer extends Reducer<ObjectWritableComparable, ObjectWritab
     @Override
     protected void reduce(ObjectWritableComparable key, Iterable<ObjectWritable> values, Context context) throws IOException, InterruptedException {
         
-        // TODO comment
         for (ObjectWritable valuein : values) {
             mos.write(key.getKeyType(), key, valuein);
         }
