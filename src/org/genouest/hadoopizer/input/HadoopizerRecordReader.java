@@ -99,7 +99,7 @@ public abstract class HadoopizerRecordReader extends RecordReader<ObjectWritable
         SplitableJobInput splitable = (SplitableJobInput) config.getSplitableInput();
         int nb = 0;
         for (JobInputFile file : splitable.getFiles()) {
-            if (file.getUrl().toString().compareTo(path.toString()) == 0) {
+            if (file.getUrl().toString().contentEquals(path.toString())) {
                 inputId = nb;
                 break;
             }

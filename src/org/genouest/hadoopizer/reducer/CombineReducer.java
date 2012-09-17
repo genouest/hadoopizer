@@ -15,7 +15,11 @@ public class CombineReducer extends Reducer<ObjectWritableComparable, ObjectWrit
 
         ArrayList<ObjectWritable> list = new ArrayList<ObjectWritable>();
         for (ObjectWritable value : values) {
-            list.add(value);
+            // This is a subtelty in hadoop: it reuses the same 'value' object on each iteration, so we need to copy it instead of writing:
+            // list.add(value);
+            // See http://cornercases.wordpress.com/2011/08/18/hadoop-object-reuse-pitfall-all-my-reducer-values-are-the-same/ for more infos
+            
+            list.add(new ObjectWritable(value.get()));
         }
         
         ObjectWritable out = new ObjectWritable(ObjectWritable[].class, (ObjectWritable[]) list.toArray(new ObjectWritable[0]));

@@ -155,7 +155,7 @@ public class FastaRecordReader extends HadoopizerRecordReader {
     public ObjectWritable getCurrentValue() throws IOException, InterruptedException {
 
         InputDataWritable data = new InputDataWritable(getInputId(), new ObjectWritable(recordValue));
-        return new ObjectWritable(data); // FIXME pass the inputid somehow
+        return new ObjectWritable(data);
     }
 
     @Override

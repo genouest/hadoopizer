@@ -100,7 +100,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
         // if the input data was joined (multiple input file), it contains a ObjectWritable[], each element corresponding to one of the input file
         
         if (!joinData) {
-            TupleWritable tw = (TupleWritable) value.get();
+            TupleWritable tw = (TupleWritable) value.get(); // FIXME update this piece of shit
             writers.get(0).write(key, (ObjectWritable) tw.get(1));
         }
         else { // data was joined
@@ -195,7 +195,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
             HadoopizerRecordReader reader = (HadoopizerRecordReader) inf.createRecordReader(split, context);
             reader.initialize(split, context);
             while (reader.nextKeyValue()) {
-                context.write(reader.getCurrentKey(out.getId()), reader.getCurrentValue());
+                context.write(reader.getCurrentKey(out.getId()), ((InputDataWritable) reader.getCurrentValue().get()).getData());
             }
             reader.close();
     

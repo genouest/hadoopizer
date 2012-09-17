@@ -137,7 +137,6 @@ public class SAMRecordReader extends HadoopizerRecordReader {
 
         InputDataWritable data = new InputDataWritable(getInputId(), new ObjectWritable(recordValue));
         return new ObjectWritable(data);
-        // FIXME wrapping in an objectwritable is useless
     }
 
     @Override
