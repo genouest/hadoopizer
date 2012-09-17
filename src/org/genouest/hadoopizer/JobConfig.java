@@ -469,7 +469,6 @@ public class JobConfig {
             if (jobOutput.getLocalPath().isEmpty()) // TODO handle other protocols (eg upload output to s3, hdfs, whatever)
                 throw new RuntimeException("Unable to generate command line: the '" + jobOutput.getId() + "' output local path is empty.");
 
-            // TODO check that all variables are present in the command line (while loading the config
             finalCommand = finalCommand.replaceAll("\\$\\{" + jobOutput.getId() + "\\}", jobOutput.getLocalPath());
         }
 
@@ -606,5 +605,37 @@ public class JobConfig {
         }
         
         return sup;
+    }
+
+    /**
+     * Check that all variables declared in the xml are used in the command line
+     */
+    public void checkVariables() {
+        
+        for (JobInput in : getStaticInputs()) {
+            if (!command.contains("${" + in.getId() + "}")) {
+                throw new RuntimeException("Input file '${" + in.getId() + "}' not found in the command line: '" + command + "'");
+            }
+        }
+        
+        for (JobOutput out : jobOutputs) {
+            if (!command.contains("${" + out.getId() + "}")) {
+                throw new RuntimeException("Output file '${" + out.getId() + "}' not found in the command line: '" + command + "'");
+            }
+        }
+        
+        int numSplits = ((SplitableJobInput) getSplitableInput()).getFiles().size();
+        String splitId = getSplitableInput().getId();
+        for (int i = 0; i < numSplits; i++) {
+            
+            String suffix = "";
+            if (((SplitableJobInput) getSplitableInput()).needJoin())
+                suffix = "#" + i;
+            
+            if (!command.contains("${" + splitId + suffix + "}")) {
+                throw new RuntimeException("Input file '${" + splitId + suffix + "}' not found in the command line: '" + command + "'");
+            }
+        }
+        
     }
 }

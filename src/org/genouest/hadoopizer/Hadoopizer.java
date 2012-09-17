@@ -152,6 +152,8 @@ public class Hadoopizer {
             System.exit(1);
         }
         
+        config.checkVariables();
+        
         // Define the HDFS work dir
         String hdfsWorkDir = cmdLine.getOptionValue("w");
         if (!hdfsWorkDir.endsWith(Path.SEPARATOR))
