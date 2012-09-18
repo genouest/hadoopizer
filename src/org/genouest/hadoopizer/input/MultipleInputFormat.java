@@ -40,14 +40,25 @@ public class MultipleInputFormat extends FileInputFormat<ObjectWritableComparabl
         int nb = 0;
         for (JobInputFile file : splitable.getFiles()) {
             if (file.getUrl().toString().compareTo(filename.toString()) == 0) {
-                HadoopizerInputFormat inf = file.getFileInputFormat();
                 
-                // There are multiple input: header temp file must have different names
-                Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file") + "_" + splitable.getId() + "_" + nb);
-                inf.setHeaderTempFile(headerFile);
-                
-                Hadoopizer.logger.info("Found an input format class: " + inf.getClass().getCanonicalName());
-                return inf.createRecordReader(split, context);
+                if (file.isLoadAsSequence()) {
+                    // Loading from a sequence file
+                    TaggedSequenceFileInputFormat inf = new TaggedSequenceFileInputFormat();
+                    
+                    Hadoopizer.logger.info("Found an input format class: " + inf.getClass().getCanonicalName());
+                    
+                    return inf.createRecordReader(split, context);
+                }
+                else {
+                    HadoopizerInputFormat inf = file.getFileInputFormat();
+                    
+                    // There are multiple input: header temp file must have different names
+                    Path headerFile = new Path(context.getConfiguration().get("hadoopizer.temp.input.header.file") + "_" + splitable.getId() + "_" + nb);
+                    inf.setHeaderTempFile(headerFile);
+                    
+                    Hadoopizer.logger.info("Found an input format class: " + inf.getClass().getCanonicalName());
+                    return inf.createRecordReader(split, context);
+                }
             }
             
             nb++;

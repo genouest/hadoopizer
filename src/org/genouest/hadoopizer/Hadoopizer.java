@@ -369,7 +369,7 @@ public class Hadoopizer {
 
         logger.info("Joined data will be placed in temporary file: " + tempOutput);
 
-        job.setMapperClass(IdentityMapper.class); // FIXME doesn't work when joining 2 sequencefile
+        job.setMapperClass(IdentityMapper.class);
         job.setReducerClass(JoinReducer.class);
         
         job.setInputFormatClass(MultipleInputFormat.class);
