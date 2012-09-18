@@ -74,13 +74,12 @@ public class JobOutput {
      * 
      * @return true if the output should be saved in SequenceFile format
      */
-    // TODO implement loading from sequencefile (with or without join support)
     public boolean isSaveAsSequence() {
         return saveAsSequence;
     }
 
     /**
-     * Set wether the output should be saved in SequenceFile format
+     * Set whether the output should be saved in SequenceFile format
      * 
      * @param saveAsSequence true if the output should be saved in SequenceFile format
      */

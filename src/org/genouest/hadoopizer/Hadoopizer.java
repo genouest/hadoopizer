@@ -298,8 +298,15 @@ public class Hadoopizer {
             job.setInputFormatClass(SequenceFileInputFormat.class);
         }
         else {
-            HadoopizerInputFormat iFormat = splitable.getFiles().get(0).getFileInputFormat();
-            job.setInputFormatClass(iFormat.getClass());
+            JobInputFile file = splitable.getFiles().get(0);
+            if (file.isLoadAsSequence()) {
+                // Loading from a sequence file
+                job.setInputFormatClass(SequenceFileInputFormat.class);
+            }
+            else {
+                HadoopizerInputFormat iFormat = file.getFileInputFormat();
+                job.setInputFormatClass(iFormat.getClass());
+            }
         }
         
         HashSet<JobOutput> outputs = config.getJobOutputs();

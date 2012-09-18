@@ -49,6 +49,11 @@ public class SplitableJobInput extends JobInput {
                 e.printStackTrace();
                 System.exit(1);
             }
+
+            if (urlEl.hasAttribute("sequence") && urlEl.getAttribute("sequence").equalsIgnoreCase("true")) {
+                // The input needs to be loaded from hadoop SequenceFile
+                file.setLoadAsSequence(true);
+            }
             
             Hadoopizer.logger.info("Using splitter '"+file.getSplitterId()+"' for input '"+getId()+"' ("+file.getUrl()+")");
         }
@@ -68,6 +73,9 @@ public class SplitableJobInput extends JobInput {
             urlElement.appendChild(doc.createTextNode(file.getUrl().toString()));
             if (file.isAutoComplete()) {
                 urlElement.setAttribute("autocomplete", "true");
+            }
+            if (file.isLoadAsSequence()) {
+                urlElement.setAttribute("sequence", "true");
             }
             
             urlElement.setAttribute("splitter", file.getSplitterId());

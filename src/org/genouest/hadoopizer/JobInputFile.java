@@ -18,6 +18,7 @@ public class JobInputFile {
 
     private URI url;
     private boolean autoComplete = false;
+    private boolean loadAsSequence = false;
     private String splitterId;
     private String localPath;
     
@@ -160,6 +161,7 @@ public class JobInputFile {
      * @return a FileInputFormat corresponding to the splitter id defined for this JobInput
      */
     public HadoopizerInputFormat getFileInputFormat() {
+        
         for (HadoopizerInputFormat inputFormat : ServiceLoader.load(HadoopizerInputFormat.class)) {
             if (inputFormat.getId().equalsIgnoreCase(getSplitterId()) && (FileInputFormat.class.isAssignableFrom(inputFormat.getClass())))
                 return inputFormat;
@@ -174,11 +176,32 @@ public class JobInputFile {
      * @return a FileOutputFormat corresponding to the splitter id defined for this JobInput
      */
     public HadoopizerOutputFormat getFileOutputFormat() {
+        
         for (HadoopizerOutputFormat outputFormat : ServiceLoader.load(HadoopizerOutputFormat.class)) {
             if (outputFormat.getId().equalsIgnoreCase(getSplitterId()) && (FileOutputFormat.class.isAssignableFrom(outputFormat.getClass())))
                 return outputFormat;
         }
         
         throw new RuntimeException("Could not find a suitable OutputFormat service for id '" + getSplitterId() + "'");
+    }
+
+    /**
+     * Does the input should be loaded from SequenceFile format?
+     * Doesn't make sense for static files
+     * 
+     * @return true if the input should be loaded from SequenceFile format
+     */
+    public boolean isLoadAsSequence() {
+        return loadAsSequence;
+    }
+
+    /**
+     * Set whether the input should be loaded from SequenceFile format
+     * Doesn't make sense for static files
+     * 
+     * @param loadAsSequence true if the input should be loaded from SequenceFile format
+     */
+    public void setLoadAsSequence(boolean loadAsSequence) {
+        this.loadAsSequence = loadAsSequence;
     }
 }
