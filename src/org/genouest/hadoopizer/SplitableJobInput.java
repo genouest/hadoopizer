@@ -9,8 +9,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 public class SplitableJobInput extends JobInput {
-    
+
     private ArrayList<JobInputFile> files = new ArrayList<JobInputFile>();
+    private boolean dataAlreadyJoined = false;
 
     public SplitableJobInput(String id) {
         
@@ -25,6 +26,10 @@ public class SplitableJobInput extends JobInput {
     @Override
     public void loadXml(Element input) {
 
+        boolean allSequences = true;
+        boolean allSameUrl = true;
+        String previousUrl = "";
+        
         NodeList urls = input.getElementsByTagName("url");
         for (int i = 0; i < urls.getLength(); i++) {
             Element urlEl = (Element) urls.item(i);
@@ -54,8 +59,18 @@ public class SplitableJobInput extends JobInput {
                 // The input needs to be loaded from hadoop SequenceFile
                 file.setLoadAsSequence(true);
             }
+            else {
+                allSequences = false;
+            }
+            
+            allSameUrl = allSameUrl && ((i == 0) || url.contentEquals(previousUrl));
+            previousUrl = url;
             
             Hadoopizer.logger.info("Using splitter '"+file.getSplitterId()+"' for input '"+getId()+"' ("+file.getUrl()+")");
+        }
+        
+        if (urls.getLength() > 1 && allSequences && allSameUrl) { // We're reusing already joined data (each url has sequence="true" + same url)
+            setDataAlreadyJoined(true);
         }
     }
 
@@ -122,5 +137,25 @@ public class SplitableJobInput extends JobInput {
     public boolean needJoin() {
         
         return files.size() > 1;
+    }
+    
+    /**
+     * Check if the data represented by current instance has already been joined or not
+     *
+     * @return true, if the data has already been joined
+     */
+    public boolean dataAlreadyJoined() {
+        
+        return dataAlreadyJoined ;
+    }
+    
+    /**
+     * Sets the data already joined.
+     *
+     * @param dataAlreadyJoined the new data already joined
+     */
+    public void setDataAlreadyJoined(boolean dataAlreadyJoined) { // FIXME fill this when loading the config
+        
+        this.dataAlreadyJoined = dataAlreadyJoined;
     }
 }

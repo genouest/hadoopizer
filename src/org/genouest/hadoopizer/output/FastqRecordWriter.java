@@ -7,7 +7,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ObjectWritable;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.genouest.hadoopizer.Hadoopizer;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
 public class FastqRecordWriter extends HadoopizerRecordWriter {

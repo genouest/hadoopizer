@@ -259,7 +259,7 @@ public class Hadoopizer {
         boolean joinData = splitable.needJoin();
         
         Path inputPath;
-        if (joinData) {
+        if (joinData && !splitable.dataAlreadyJoined()) {
             // TODO allow to use already joined data when reusing input data
             // There are multiple input data files, join them first in a specific map/reduce job
             inputPath = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + Path.SEPARATOR + "temp_joined_data");
