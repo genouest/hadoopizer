@@ -626,7 +626,7 @@ public class JobConfig {
         
         int numSplits = ((SplitableJobInput) getSplitableInput()).getFiles().size();
         String splitId = getSplitableInput().getId();
-        for (int i = 0; i < numSplits; i++) {
+        for (int i = 1; i <= numSplits; i++) {
             
             String suffix = "";
             if (((SplitableJobInput) getSplitableInput()).needJoin())
