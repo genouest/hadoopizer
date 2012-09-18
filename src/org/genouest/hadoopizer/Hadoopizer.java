@@ -31,6 +31,7 @@ import org.apache.hadoop.mapreduce.lib.output.MultipleOutputs;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.input.MultipleInputFormat;
+import org.genouest.hadoopizer.input.TaggedSequenceFileInputFormat;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 import org.genouest.hadoopizer.mapper.IdentityMapper;
 import org.genouest.hadoopizer.mapper.ShellMapper;
@@ -294,6 +295,7 @@ public class Hadoopizer {
         job.setJarByClass(Hadoopizer.class);
         
         // Define input and output data format
+        // FIXME finish support for multiple (joined or not) input data
         if (joinData) {
             job.setInputFormatClass(SequenceFileInputFormat.class);
         }
@@ -301,7 +303,7 @@ public class Hadoopizer {
             JobInputFile file = splitable.getFiles().get(0);
             if (file.isLoadAsSequence()) {
                 // Loading from a sequence file
-                job.setInputFormatClass(SequenceFileInputFormat.class);
+                job.setInputFormatClass(TaggedSequenceFileInputFormat.class);
             }
             else {
                 HadoopizerInputFormat iFormat = file.getFileInputFormat();
