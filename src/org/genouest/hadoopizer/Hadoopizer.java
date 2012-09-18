@@ -260,7 +260,6 @@ public class Hadoopizer {
         
         Path inputPath;
         if (joinData && !splitable.dataAlreadyJoined()) {
-            // TODO allow to use already joined data when reusing input data
             // There are multiple input data files, join them first in a specific map/reduce job
             inputPath = new Path(jobConf.get("hadoopizer.hdfs.tmp.dir") + Path.SEPARATOR + "temp_joined_data");
             
@@ -295,7 +294,6 @@ public class Hadoopizer {
         job.setJarByClass(Hadoopizer.class);
         
         // Define input and output data format
-        // FIXME finish support for multiple (joined or not) input data
         if (joinData) {
             job.setInputFormatClass(SequenceFileInputFormat.class);
         }
@@ -371,7 +369,7 @@ public class Hadoopizer {
 
         logger.info("Joined data will be placed in temporary file: " + tempOutput);
 
-        job.setMapperClass(IdentityMapper.class);
+        job.setMapperClass(IdentityMapper.class); // FIXME doesn't work when joining 2 sequencefile
         job.setReducerClass(JoinReducer.class);
         
         job.setInputFormatClass(MultipleInputFormat.class);

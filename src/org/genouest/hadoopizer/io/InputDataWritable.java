@@ -11,7 +11,7 @@ import org.apache.hadoop.io.Writable;
 /**
  * Contains some data (stored as an {@link ObjectWritable}) and an integer id allowing to keep track of the origin of the data
  */
-public class InputDataWritable implements Writable { // TODO rename
+public class InputDataWritable implements Writable { // FIXME rename
 
     private int inputId;
     private ObjectWritable data;

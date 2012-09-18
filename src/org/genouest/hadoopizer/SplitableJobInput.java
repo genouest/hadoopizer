@@ -154,7 +154,7 @@ public class SplitableJobInput extends JobInput {
      *
      * @param dataAlreadyJoined the new data already joined
      */
-    public void setDataAlreadyJoined(boolean dataAlreadyJoined) { // FIXME fill this when loading the config
+    public void setDataAlreadyJoined(boolean dataAlreadyJoined) {
         
         this.dataAlreadyJoined = dataAlreadyJoined;
     }
