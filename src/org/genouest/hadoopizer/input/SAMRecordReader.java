@@ -14,7 +14,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.LineReader;
-import org.genouest.hadoopizer.io.InputDataWritable;
+import org.genouest.hadoopizer.io.TaggedObjectWritable;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
 /**
@@ -135,7 +135,7 @@ public class SAMRecordReader extends HadoopizerRecordReader {
     @Override
     public ObjectWritable getCurrentValue() throws IOException, InterruptedException {
 
-        InputDataWritable data = new InputDataWritable(getInputId(), new ObjectWritable(recordValue));
+        TaggedObjectWritable data = new TaggedObjectWritable(getInputId(), new ObjectWritable(recordValue));
         return new ObjectWritable(data);
     }
 

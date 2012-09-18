@@ -26,7 +26,7 @@ import org.genouest.hadoopizer.JobOutput;
 import org.genouest.hadoopizer.SplitableJobInput;
 import org.genouest.hadoopizer.input.HadoopizerInputFormat;
 import org.genouest.hadoopizer.input.HadoopizerRecordReader;
-import org.genouest.hadoopizer.io.InputDataWritable;
+import org.genouest.hadoopizer.io.TaggedObjectWritable;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 import org.genouest.hadoopizer.output.HadoopizerOutputFormat;
 
@@ -104,7 +104,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
             
             for (int i = 0; i < values.length; i++) {
                 
-                InputDataWritable data = (InputDataWritable) values[i].get();
+                TaggedObjectWritable data = (TaggedObjectWritable) values[i].get();
                 int inputId = data.getInputId();
                 if (inputId >= nbWriters)
                     throw new RuntimeException("Unexpected input data.");
@@ -114,7 +114,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
             }
         }
         else {
-            InputDataWritable tw = (InputDataWritable) value.get();
+            TaggedObjectWritable tw = (TaggedObjectWritable) value.get();
             writers.get(0).write(key, (ObjectWritable) tw.getData());
         }
     }
@@ -193,7 +193,7 @@ public class ShellMapper extends Mapper<ObjectWritableComparable, ObjectWritable
             HadoopizerRecordReader reader = (HadoopizerRecordReader) inf.createRecordReader(split, context);
             reader.initialize(split, context);
             while (reader.nextKeyValue()) {
-                context.write(reader.getCurrentKey(out.getId()), ((InputDataWritable) reader.getCurrentValue().get()).getData());
+                context.write(reader.getCurrentKey(out.getId()), ((TaggedObjectWritable) reader.getCurrentValue().get()).getData());
             }
             reader.close();
     

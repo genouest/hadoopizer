@@ -11,16 +11,16 @@ import org.apache.hadoop.io.Writable;
 /**
  * Contains some data (stored as an {@link ObjectWritable}) and an integer id allowing to keep track of the origin of the data
  */
-public class InputDataWritable implements Writable { // FIXME rename
+public class TaggedObjectWritable implements Writable {
 
     private int inputId;
     private ObjectWritable data;
     
-    public InputDataWritable() {
+    public TaggedObjectWritable() {
         
     }
     
-    public InputDataWritable(int inputId, ObjectWritable data) {
+    public TaggedObjectWritable(int inputId, ObjectWritable data) {
         set(inputId, data);
     }
 
@@ -53,9 +53,9 @@ public class InputDataWritable implements Writable { // FIXME rename
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof InputDataWritable))
+        if (!(o instanceof TaggedObjectWritable))
             return false;
-        InputDataWritable other = (InputDataWritable)o;
+        TaggedObjectWritable other = (TaggedObjectWritable)o;
         return (this.inputId == other.inputId) && (this.data == other.data);
     }
 

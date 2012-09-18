@@ -12,7 +12,7 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileRecordReader;
 import org.genouest.hadoopizer.JobConfig;
 import org.genouest.hadoopizer.JobInputFile;
 import org.genouest.hadoopizer.SplitableJobInput;
-import org.genouest.hadoopizer.io.InputDataWritable;
+import org.genouest.hadoopizer.io.TaggedObjectWritable;
 import org.genouest.hadoopizer.io.ObjectWritableComparable;
 
 public class TaggedSequenceFileRecordReader extends SequenceFileRecordReader<ObjectWritableComparable, ObjectWritable> {
@@ -61,7 +61,7 @@ public class TaggedSequenceFileRecordReader extends SequenceFileRecordReader<Obj
     @Override
     public ObjectWritable getCurrentValue() {
 
-        InputDataWritable data = new InputDataWritable(getInputId(), super.getCurrentValue());
+        TaggedObjectWritable data = new TaggedObjectWritable(getInputId(), super.getCurrentValue());
         return new ObjectWritable(data);
     }
     
