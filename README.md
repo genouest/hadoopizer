@@ -11,6 +11,8 @@ Installation
 ------------
 
 Download the latest version of Hadoopizer from the official website (http://github.com/genouest/hadoopizer/downloads).
+Copy the hadoopizer.jar file somewhere on the master node of hadoop cluster.
+Hadoopizer has the same dependencies as Hadoop, so it is usable directly on a machine where hadoop is correctly installed.
 
 Creating a job
 --------------
@@ -58,7 +60,38 @@ It must be a non existing directory, and it is safe to delete it once the job is
 Advanced usage
 --------------
 
+### Supported protocols for data transfers
+
+Hadoopizer is able to read/write data from/to several kind of filesystems.
+The supported protocols are so far:
+
+    local
+    HDFS
+
+S3, http or ftp could be implemented soon.
+
+In the configuration file, just write the urls according to the data location:
+
+    <input id="db">
+        <url>/local/foo/bar/mydb.fasta</url>
+    </input>
+    
+    <input id="db2">
+        <url>hdfs://your_hdfs_master_node/foo/bar/mydb.fasta</url>
+    </input>
+
+This works for data output too.
+
 ### Multiple input data
+
+In some cases, it is needed to split input data coming from different files.
+One frequent use case in bioinformatics is when you want to analyse paired end sequences. In this case, you start from 2 files that need to be read synchronously: each line from the file 1 needs data from corresponding line in file 2.
+This is possible in Hadoopizer by specifying multiple url in the input element:
+
+    <input id="query" split="true">
+        <url split="fastq">/local/foo/bar/myfile1.fastq</url>
+        <url split="fastq">/local/foo/bar/myfile2.fastq</url>
+    </input>
 
 ### Multiple output data
 
@@ -80,6 +113,24 @@ It is possible to specify several output files for your command line. To do this
 Both output files will be placed in the output directory (/local/foo/bar/output/).
 
 ### Sequence files
+
+If you want to reuse some output data as the input of another job, you can improve performances by writing the output in a Hadoop-specific binary format that offers better i/o performances.
+To do this, add the sequence option in your xml file:
+
+    <outputs>
+        <url>/local/foo/bar/output/</url>
+        <output id="res" reducer="sam" sequence="true" />
+        <output id="count" reducer="text" />
+    </outputs>
+
+In this example, only the sam file will be written in this binary format.
+For better performances, you can also write this file directly to HDFS:
+
+    <outputs>
+        <url>hdfs://your_hdfs_master_node/foo/bar/output/</url>
+        <output id="res" reducer="sam" sequence="true" />
+        <output id="count" reducer="text" />
+    </outputs>
 
 ### Reusing multiple input data
 
