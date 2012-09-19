@@ -32,20 +32,14 @@ If you want to use a software that is not available on the compute nodes, you ca
 To do so, first prepare an archive containing the binaries  you would like to deploy. You can organize the content as you want.
 Then, when launching your Hadoopizer job, add the following option:
 
-> -b /path/to/your/binary/archive.tar.gz
+    -b /path/to/your/binary/archive.tar.gz
 
 The archive will then be extracted in a directory named 'binaries' in the work directory of each node. To use it, simply adapt your xml file as follow:
 
-> &lt;?xml version="1.0" encoding="utf-8"?&gt;
-> 
-> &lt;job&gt;
-> 
->     &lt;command&gt;
-> 
->         binaries/your_binary -some ${options}
-> 
->     &lt;/command&gt;
-> 
-> [...]
-> 
-> &lt;/job&gt;
+    <?xml version="1.0" encoding="utf-8"?>
+    <job>
+        <command>
+            binaries/your_binary -some ${options}
+        </command>
+    [...]
+    </job>
