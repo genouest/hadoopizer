@@ -1,15 +1,65 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<project default="create_run_jar" name="Create Runnable Jar for Project hadoopizer with libraries in sub-folder">
-    <!--this file was created by Eclipse Runnable JAR Export Wizard-->
-    <!--ANT 1.7 is required                                        -->
-    <target name="create_run_jar">
-        <jar destfile="distrib/hadoopizer.jar">
+<project default="jar" name="Building Hadoopizer">
+
+	<property name="hadoopizer.version" value="1.0"/>
+	
+    <path id="classpath">
+        <fileset dir="lib" includes="**/*.jar"/>
+    </path>
+	
+	<target name="clean">
+        <delete dir="bin"/>
+        <delete dir="build"/>
+    </target>
+	
+    <target name="compile">
+        <mkdir dir="build/classes"/>
+        <javac srcdir="src" destdir="build/classes" classpathref="classpath" includeantruntime="false" target="1.6" source="1.6"/>
+    </target>
+
+    <target name="jar" depends="clean,compile">
+    	
+        <jar destfile="bin/hadoopizer-${hadoopizer.version}.jar">
             <manifest>
                 <attribute name="Main-Class" value="org.genouest.hadoopizer.Hadoopizer"/>
             </manifest>
-            <fileset dir="bin"/>
+            <fileset dir="build/classes"/>
             <fileset dir="." includes="resources/*"/>
             <metainf dir="META-INF"/>
         </jar>
+    	  
+        <tar destfile="bin/hadoopizer-${hadoopizer.version}.tar.gz"
+    	     compression="gzip">
+        	<tarfileset dir=".">
+          	    <include name="LICENSE"/>
+                <include name="README.md"/>
+      		</tarfileset>
+            <tarfileset dir="bin">
+                <include name="hadoopizer-${hadoopizer.version}.jar"/>
+            </tarfileset>
+        </tar>
+    	
+        <tar destfile="bin/hadoopizer-src-${hadoopizer.version}.tar.gz"
+           compression="gzip">
+            <tarfileset dir=".">
+                <include name="LICENSE"/>
+                <include name="README.md"/>
+            </tarfileset>
+            <tarfileset dir=".">
+                <include name="src/**/*"/>
+            </tarfileset>
+            <tarfileset dir=".">
+                <include name="META-INF/**/*"/>
+            </tarfileset>
+            <tarfileset dir=".">
+                <include name="example/**/*"/>
+            </tarfileset>
+            <tarfileset dir=".">
+                <include name="lib/**/*"/>
+            </tarfileset>
+            <tarfileset dir="">
+                <include name="resources/**/*"/>
+            </tarfileset>
+        </tar>
     </target>
 </project>
