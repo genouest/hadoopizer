@@ -25,7 +25,7 @@ Take a look at the following example:
     <?xml version="1.0" encoding="utf-8"?>
     <job>
         <command>
-            mapper -query ${q} -db ${db} -out ${res}
+            mapper -query ${query} -db ${db} -out ${res}
         </command>
         
         <input id="query" split="true">
@@ -82,36 +82,6 @@ In the configuration file, just write the urls according to the data location:
 
 This works for data output too.
 
-### Multiple input data
-
-In some cases, it is needed to split input data coming from different files.
-One frequent use case in bioinformatics is when you want to analyse paired end sequences. In this case, you start from 2 files that need to be read synchronously: each line from the file 1 needs data from corresponding line in file 2.
-This is possible in Hadoopizer by specifying multiple url in the input element:
-
-    <input id="query" split="true">
-        <url split="fastq">/local/foo/bar/myfile1.fastq</url>
-        <url split="fastq">/local/foo/bar/myfile2.fastq</url>
-    </input>
-
-### Multiple output data
-
-It is possible to specify several output files for your command line. To do this, simply write one output element for each output file:
-
-    <?xml version="1.0" encoding="utf-8"?>
-    <job>
-        <command>
-            mapper -query ${q} -db ${db} -out ${res}; wc -l ${res} > ${count}
-        </command>
-        [...]
-        <outputs>
-            <url>/local/foo/bar/output/</url>
-            <output id="res" reducer="sam" />
-            <output id="count" reducer="text" />
-        </outputs>
-    </job>
-
-Both output files will be placed in the output directory (/local/foo/bar/output/).
-
 ### Sequence files
 
 If you want to reuse some output data as the input of another job, you can improve performances by writing the output in a Hadoop-specific binary format that offers better i/o performances.
@@ -132,9 +102,84 @@ For better performances, you can also write this file directly to HDFS:
         <output id="count" reducer="text" />
     </outputs>
 
+Then, to use this data in another job, add an input element that looks like this:
+
+        <input id="query" split="true">
+            <url split="fastq" sequence="true">/local/foo/bar/myfile.fastq</url>
+        </input>
+
+### Multiple output data
+
+It is possible to specify several output files for your command line. To do this, simply write one output element for each output file:
+
+    <?xml version="1.0" encoding="utf-8"?>
+    <job>
+        <command>
+            mapper -query ${q} -db ${db} -out ${res}; wc -l ${res} > ${count}
+        </command>
+        [...]
+        <outputs>
+            <url>/local/foo/bar/output/</url>
+            <output id="res" reducer="sam" />
+            <output id="count" reducer="text" />
+        </outputs>
+    </job>
+
+Both output files will be placed in the output directory (/local/foo/bar/output/).
+
+### Multiple input data
+
+In some cases, it is needed to split input data coming from different files.
+One frequent use case in bioinformatics is when you want to analyse paired end sequences. In this case, you start from 2 files that need to be read synchronously: each line from the file 1 needs data from corresponding line in file 2.
+This is possible in Hadoopizer by specifying multiple url in the input element:
+
+    <input id="query" split="true">
+        <url split="fastq">/local/foo/bar/myfile1.fastq</url>
+        <url split="fastq">/local/foo/bar/myfile2.fastq</url>
+    </input>
+
+This will add a supplementary map-reduce job before the execution of the command specified in the config file.
+During this step, all data will be joined and placed in a temporary file. If you plan to use the same groups of input files for several jobs, see the 'Reusing multiple input data' section below.
+
+When using multiple input file, you have to write where each file will be used in the command line:
+
+        <command>
+            mapper -q1 ${query#1} -q ${query#2} -db ${db} -out ${res}
+        </command>
+
 ### Reusing multiple input data
 
+If you want to reuse a same group of input files for several job, you can refer to a temp file containing already joined data.
+This file is created in (assuming you are using the command line provided above to launch Hadoopizer):
+
+    hdfs://your_hdfs_master_node/a_temp_folder/temp_joined_data/part-r-00000
+
+You can reuse this data like this:
+
+    <input id="query" split="true">
+        <url split="fastq" sequence="true">hdfs://your_hdfs_master_node/a_temp_folder/temp_joined_data/part-r-00000</url>
+        <url split="fastq" sequence="true">hdfs://your_hdfs_master_node/a_temp_folder/temp_joined_data/part-r-00000</url>
+    </input>
+
+Yes, you have to write the same 2 url in order to Hadoopizer to know that the file contains data from 2 original files.
+
 ### Compression
+
+By default, data is compressed for all the transfers during the map-reduce steps.
+It is also possible to automatically compress the output data by adding the compressor setting:
+
+    <outputs>
+        <compressor>gzip</compressor>
+        
+        <url>hdfs://your_hdfs_master_node/foo/bar/output/</url>
+        <output id="res" reducer="sam" />
+    </outputs>
+
+Different compressor are available: gzip and bzip2.
+
+You can also use compressed data as input of your job. In this case, Hadoopizer will automatically detect it and decompress on-the-fly.
+Be warned that depending on the compression format of input files, Hadoopizer may not be able to perform the spliting of your data.
+In this case, all the data will be sent to a single compute node.
 
 ### Hadoop options
 
